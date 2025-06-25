@@ -1,0 +1,26 @@
+name: WioLink uploader
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"  # 每 15 分鐘執行一次
+  workflow_dispatch:        # 可手動觸發
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 下載 Repo
+        uses: actions/checkout@v3
+
+      - name: 設定 Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: 安裝套件
+        run: |
+          pip install -r requirements.txt
+
+      - name: 執行上傳程式
+        run: python upload.py
