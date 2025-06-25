@@ -1,0 +1,71 @@
+import requests
+from supabase import create_client
+from datetime import datetime, timezone, timedelta
+
+# Supabase 設定
+SUPABASE_URL = "https://orlmyfjhqcmlrbrlonbt.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybG15ZmpocWNtbHJicmxvbmJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NTIwMjI1MCwiZXhwIjoyMDYwNzc4MjUwfQ.ThQYh9TgVpu9PEjuK-2Q2jaG_ewFzj4Osaq70RuH3rY"
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Wio Link API 設定
+ACCESS_TOKEN = "ad721465a96333625477b3690643f076"
+BASE_URL = "https://cn.wio.seeed.io/v1/node"
+
+# API 端點
+ENDPOINTS = {
+    "humidity": f"{BASE_URL}/GroveTempHumD0/humidity?access_token={ACCESS_TOKEN}",
+    "light_intensity": f"{BASE_URL}/GroveDigitalLightI2C0/lux?access_token={ACCESS_TOKEN}",
+    "motion_detected": f"{BASE_URL}/GrovePIRMotionD1/approach?access_token={ACCESS_TOKEN}",
+    "celsius_degree": f"{BASE_URL}/GroveTempHumD0/temperature?access_token={ACCESS_TOKEN}",
+}
+
+# 抓取感測器資料
+def get_sensor_data():
+    result = {
+        "timestamp": (datetime.now(timezone(timedelta(hours=8)))).isoformat(),
+        "sensor_name": "wiolink2",
+        "humidity": None,
+        "light_intensity": None,
+        "motion_detected": None,
+        "celsius_degree": None
+    }
+
+    try:
+        r = requests.get(ENDPOINTS["humidity"])
+        if r.ok:
+            result["humidity"] = r.json().get("humidity")
+    except:
+        pass
+
+    try:
+        r = requests.get(ENDPOINTS["light_intensity"])
+        if r.ok:
+            result["light_intensity"] = r.json().get("lux")
+    except:
+        pass
+
+    try:
+        r = requests.get(ENDPOINTS["motion_detected"])
+        if r.ok:
+            result["motion_detected"] = r.json().get("approach")
+    except:
+        pass
+
+    try:
+      r = requests.get(ENDPOINTS["celsius_degree"])
+      if r.ok:
+        result["celsius_degree"] = r.json().get("celsius_degree")
+    except:
+      pass
+    
+
+    return result
+
+# 上傳至 Supabase
+def upload_to_supabase(data):
+    supabase.table("wiolink").insert(data).execute()
+    print("✅ 上傳成功：", data)
+
+# 執行
+data = get_sensor_data()
+upload_to_supabase(data)
