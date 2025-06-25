@@ -10,7 +10,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Wio Link API 設定
 ACCESS_TOKEN = os.getenv("WIO_TOKEN")
-BASE_URL = "https://us.wio.seeed.io/v1/node"  # 建議使用 us 伺服器更穩定
+BASE_URL = "https://cn.wio.seeed.io/v1/node"  # 建議使用 us 伺服器更穩定
 
 # API 端點
 ENDPOINTS = {
