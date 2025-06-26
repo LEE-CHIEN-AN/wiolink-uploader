@@ -45,7 +45,7 @@ def get_sensor_data(device):
     for key, path in SENSORS.items():
         url = f"{BASE_URL}{path}?access_token={device['token']}"
         try:
-            r = requests.get(url, timeout=5)  # 加上 timeout 避免卡住
+            r = requests.get(url)  # 加上 timeout 避免卡住
             if r.ok:
                 # 回傳 JSON 的值都只有一個，直接取第一個 value
                 value = list(r.json().values())[0]
