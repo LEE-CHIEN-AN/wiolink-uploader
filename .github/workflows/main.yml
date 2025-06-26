@@ -2,14 +2,14 @@ name: WioLink uploader
 
 on:
   schedule:
-    - cron: "*/15 * * * *"  # 每 15 分鐘執行一次
+    - cron: "*/30 * * * *"  # 每 30 分鐘執行一次
   workflow_dispatch:        # 可手動觸發
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
-    env:
+    env: # secrets 
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       WIO_TOKEN: ${{ secrets.WIO_TOKEN }}
