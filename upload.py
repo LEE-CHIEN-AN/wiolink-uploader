@@ -25,11 +25,11 @@ BASE_URL = "https://cn.wio.seeed.io/v1/node"
 
 # === 各感測器 API 路徑定義 ===
 SENSORS = {
-    "humidity": "/GroveTempHumD0/humidity",
-    "light_intensity": "/GroveDigitalLightI2C0/lux",
-    "motion_detected": "/GrovePIRMotionD1/approach",
-    "celsius_degree": "/GroveTempHumD0/temperature",
-    "mag_approach": "/GroveMagneticSwitchD2/approach"  # 磁簧開關感測器
+    "humidity": "/GroveTempHumD2/humidity",  # 濕度感測器
+    "light_intensity": "/GroveDigitalLightI2C0/lux",  # 光照強度感測器
+    "motion_detected": "/GrovePIRMotionD1/approach",  # 移動偵測感測器
+    "celsius_degree": "/GroveTempHumD2/temperature",  # 溫度感測器
+    "mag_approach": "/GroveMagneticSwitchD0/approach"  # 磁簧開關感測器
 }
 
 # === 從單一板子抓取所有感測器資料 ===
