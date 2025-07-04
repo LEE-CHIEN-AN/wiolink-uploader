@@ -39,6 +39,7 @@ def get_sensor_data(device):
         "sensor_name": device["name"],
         "humidity": None,
         "light_intensity": None,
+        "motion_detected": None,  # 動作偵測感測器（目前未使用）
         "dust": None,
         "celsius_degree": None,
         "mag_approach": None,  # 磁簧開關狀態（門是否靠近磁鐵）
