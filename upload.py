@@ -11,7 +11,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # === 所有 Wio Link 板子的 token 與命名設定 ===
 DEVICES = [
     {
-        "name": "wiolink2",  # 第一塊板子
+        "name": "wiolink window",  # 第一塊板子
         "token": "ad721465a96333625477b3690643f076"
     },
     {
@@ -27,7 +27,7 @@ BASE_URL = "https://cn.wio.seeed.io/v1/node"
 SENSORS = {
     "humidity": "/GroveTempHumD2/humidity",  # 濕度感測器
     "light_intensity": "/GroveDigitalLightI2C0/lux",  # 光照強度感測器
-    "motion_detected": "/GrovePIRMotionD1/approach",  # 移動偵測感測器
+    "dust": "/GroveDustD1/dust",  # 灰塵感測器
     "celsius_degree": "/GroveTempHumD2/temperature",  # 溫度感測器
     "mag_approach": "/GroveMagneticSwitchD0/approach"  # 磁簧開關感測器
 }
@@ -39,10 +39,10 @@ def get_sensor_data(device):
         "sensor_name": device["name"],
         "humidity": None,
         "light_intensity": None,
-        "motion_detected": None,
+        "dust": None,
         "celsius_degree": None,
         "mag_approach": None,  # 磁簧開關狀態（門是否靠近磁鐵）
-        "door_status": None  # 新增的門狀態描述（"closed" or "open"）
+        "door_status": None,  # 新增的門狀態描述（"closed" or "open"）
     }
 
     for key, path in SENSORS.items():
