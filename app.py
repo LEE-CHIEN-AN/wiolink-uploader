@@ -74,51 +74,7 @@ if not latest_wall.empty and not latest_window.empty:
     elif dust_now < 150 and humidity_now > 50:
         st.success(f"✅ 室內環境穩定（Dust: {dust_now:.1f}, 濕度: {humidity_now:.1f}%），維持現狀即可")
 
-import requests
-import streamlit as st
 
-def fetch_google_weather(lat=25.01814, lon=121.54711, key="AIzaSyCZtsy-wXOjgXFGdRmcDj0WygHrSfd4_xM"):
-    url = f"https://weather.googleapis.com/v1/weather:lookup?location.latitude={lat}&location.longitude={lon}&key={key}"
-
-    try:
-        r = requests.get(url)
-        if r.status_code == 200:
-            data = r.json()
-
-            # 取出目前天氣條件
-            conditions = data["currentConditions"]
-            precipitation_type = conditions.get("precipitationType", "NONE")
-            humidity = conditions.get("humidity", None)
-            temperature = conditions.get("temperature", None)
-
-            return {
-                "precipitation": precipitation_type,
-                "humidity": humidity,
-                "temperature": temperature
-            }
-        else:
-            st.error(f"⚠️ 無法取得天氣資料（狀態碼 {r.status_code}）")
-            return None
-    except Exception as e:
-        st.error(f"❌ 錯誤：{e}")
-        return None
-
-# === Streamlit 顯示天氣狀態 ===
-st.subheader("🌦️ 即時天氣狀態 (來自 Google Weather API)")
-weather = fetch_google_weather()
-
-if weather:
-    precip = weather["precipitation"]
-    humid = weather["humidity"]
-    temp = weather["temperature"]
-
-    if precip != "NONE":
-        st.error(f"目前正在下雨（{precip}）☔，請考慮關窗")
-    else:
-        st.success("目前無降雨 🌤️")
-
-    st.info(f"目前濕度：{humid * 100:.0f}%")
-    st.info(f"目前氣溫：約 {temp:.1f} °C")
 
 # ---------- 圖表 1：Dust ----------
 st.subheader("🟤 灰塵（每公升粒子數） (pcs/0.01cf)")
