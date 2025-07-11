@@ -11,9 +11,10 @@ matplotlib.rc('font', family='Noto Sans CJK TC')
 
 # ---------- Supabase 設定 ----------
 # Supabase 設定
-SUPABASE_URL = "https://orlmyfjhqcmlrbrlonbt.supabase.co"  # Supabase 專案網址
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybG15ZmpocWNtbHJicmxvbmJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NTIwMjI1MCwiZXhwIjoyMDYwNzc4MjUwfQ.ThQYh9TgVpu9PEjuK-2Q2jaG_ewFzj4Osaq70RuH3rY"  # Supabase API 金鑰
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)  # 建立 Supabase 連線
+# === Supabase 設定（從 GitHub Secrets 環境變數取得） ===
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ---------- 讀取資料 ----------
 @st.cache_data(ttl=900)  # 每15分鐘自動重新抓資料
