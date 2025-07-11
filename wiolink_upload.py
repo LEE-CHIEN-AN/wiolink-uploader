@@ -7,7 +7,7 @@ import psycopg2
 conn = psycopg2.connect(
     dbname="wiolink",
     user="postgres",      # 你自己的帳號
-    password="Anjapan12",  # 替換成你的密碼
+    password="",  # 替換成你的密碼
     host="localhost",
     port="5432"
 )
