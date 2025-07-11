@@ -55,6 +55,7 @@ st.dataframe(latest_df[[
 # 最近牆面或窗戶 dust 與濕度趨勢
 latest_wall = latest_df[latest_df["sensor_name"] == "wiolink wall"]
 latest_window = latest_df[latest_df["sensor_name"] == "wiolink window"]
+latest_door = latest_df[latest_df["sensor_name"] == "wiolink door"]
 
 if not latest_wall.empty and not latest_window.empty:
     dust_now = latest_wall.iloc[0]["dust"]
