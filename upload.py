@@ -17,6 +17,10 @@ DEVICES = [
     {
         "name": "wiolink door",  # 第二塊板子
         "token": "96c7644289c50aff68424a490845267f"
+    },
+    {
+        "name": "wiolink wall",
+        "token": "1b10e1172b455a426b53af996442c0ce"
     }
 ]
 
@@ -25,10 +29,11 @@ BASE_URL = "https://cn.wio.seeed.io/v1/node"
 
 # === 各感測器 API 路徑定義 ===
 SENSORS = {
-    "humidity": "/GroveTempHumD2/humidity",  # 濕度感測器
     "light_intensity": "/GroveDigitalLightI2C0/lux",  # 光照強度感測器
-    "dust": "/GroveDustD1/dust",  # 灰塵感測器
+    "motion_detected": "/GrovePIRMotionD1/approach",  # 移動偵測感測器
+    "dust": "/GroveDustD0/dust",  # 灰塵感測器
     "celsius_degree": "/GroveTempHumD2/temperature",  # 溫度感測器
+    "humidity": "/GroveTempHumD2/humidity",  # 濕度感測器
     "mag_approach": "/GroveMagneticSwitchD0/approach"  # 磁簧開關感測器
 }
 
