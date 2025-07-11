@@ -31,7 +31,7 @@ def load_data():
     df = pd.DataFrame(response.data)
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
     df["dust"] = pd.to_numeric(df["dust"], errors="coerce")
-    df = df.dropna(subset=["dust", "timestamp", "sensor_name"])
+    df = df.dropna(subset=["timestamp", "sensor_name"])
     df = df[df["dust"] != 0.62]  # 移除異常值
     return df
 
@@ -45,28 +45,12 @@ critical_time = pd.to_datetime("2025-07-09 13:55:00")
 
 # ---------- 各裝置最新資料表格 ----------
 st.subheader("🆕 各裝置最新一筆感測資料")
-
-# 僅保留指定裝置
-device_names = ["wiolink door", "wiolink wall", "wiolink window"]
-filtered_df = df[df["sensor_name"].isin(device_names)]
-
-# 依 timestamp 遞減排序後，各裝置取第一筆資料
-latest_df = (
-    filtered_df.sort_values(by="timestamp", ascending=False)
-    .drop_duplicates(subset=["sensor_name"])
-)
-
-# 時間格式化顯示
+latest_df = df.sort_values(by="timestamp", ascending=False).drop_duplicates(subset=["sensor_name"])
 latest_df["timestamp"] = latest_df["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
-
-# 顯示資料表
-st.dataframe(
-    latest_df[[
-        "timestamp", "sensor_name", "humidity", "celsius_degree",
-        "light_intensity", "dust", "motion_detected", "door_status"
-    ]].reset_index(drop=True),
-    use_container_width=True
-)
+st.dataframe(latest_df[[
+    "timestamp", "sensor_name", "humidity", "celsius_degree",
+    "light_intensity", "dust", "motion_detected", "door_status"
+]]) 
 
 # ---------- 圖表 1：Dust ----------
 st.subheader("🟤 灰塵（每公升粒子數） (pcs/0.01cf)")
