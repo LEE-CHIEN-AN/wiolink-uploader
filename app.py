@@ -1,26 +1,92 @@
-import streamlit as st
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import streamlit as st
 from supabase import create_client
 from datetime import datetime, timedelta, timezone
 
+# 字型設定（針對 Windows 中文支援）
+import matplotlib
+matplotlib.rc('font', family='Microsoft JhengHei')
+
+# ---------- Supabase 設定 ----------
 # Supabase 設定
 SUPABASE_URL = "https://orlmyfjhqcmlrbrlonbt.supabase.co"  # Supabase 專案網址
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybG15ZmpocWNtbHJicmxvbmJ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NTIwMjI1MCwiZXhwIjoyMDYwNzc4MjUwfQ.ThQYh9TgVpu9PEjuK-2Q2jaG_ewFzj4Osaq70RuH3rY"  # Supabase API 金鑰
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)  # 建立 Supabase 連線
 
-# 資料抓取
-@st.cache_data(ttl=900)  # 每15分鐘更新
-def fetch_data():
+# ---------- 讀取資料 ----------
+@st.cache_data(ttl=900)  # 每15分鐘自動重新抓資料
+def load_data():
     now = datetime.now(timezone(timedelta(hours=8)))
     past_72h = now - timedelta(hours=72)
-    data = supabase.table("wiolink").select("*").gte("timestamp", past_72h.isoformat()).execute().data
-    df = pd.DataFrame(data)
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df["dust"] = pd.to_numeric(df["dust"], errors="coerce")
-    return df.dropna(subset=["dust"])
 
-# 介面
-st.title("教室感測器資料儀表板")
-df = fetch_data()
-st.line_chart(df.set_index("timestamp")["dust"])
+    response = supabase.table("wiolink") \
+        .select("*") \
+        .gte("timestamp", past_72h.isoformat()) \
+        .order("timestamp", desc=False) \
+        .execute()
+
+    df = pd.DataFrame(response.data)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    df["dust"] = pd.to_numeric(df["dust"], errors="coerce")
+    df = df.dropna(subset=["dust", "timestamp", "sensor_name"])
+    df = df[df["dust"] != 0.62]  # 移除異常值
+    return df
+
+df = load_data()
+
+# ---------- Streamlit UI ----------
+st.title("🌿 教室感測器資料儀表板")
+st.write("資料時間範圍：最近 72 小時，每 15 分鐘更新一次。")
+
+critical_time = pd.to_datetime("2025-07-09 13:55:00")
+
+# ---------- 圖表 1：Dust ----------
+st.subheader("🟤 粉塵濃度 (pcs/0.01cf)")
+fig1, ax1 = plt.subplots(figsize=(10, 6))
+ax1.plot(df["timestamp"], df["dust"])
+ax1.axvline(x=critical_time, color='red', linestyle='--', label='0709 13:55 開窗關窗時間')
+ax1.set_title("Dust 濃度趨勢")
+ax1.set_xlabel("時間")
+ax1.set_ylabel("Dust (pcs/0.01cf)")
+ax1.legend()
+st.pyplot(fig1)
+
+# ---------- 圖表 2：Humidity ----------
+st.subheader("💧 濕度 (%)")
+fig2, ax2 = plt.subplots(figsize=(10, 6))
+ax2.plot(df["timestamp"], df["humidity"], color='green')
+ax2.axvline(x=critical_time, color='red', linestyle='--', label='0709 13:55')
+ax2.set_title("濕度趨勢")
+ax2.set_xlabel("時間")
+ax2.set_ylabel("Humidity (%)")
+ax2.set_ylim(0, 100)
+ax2.legend()
+st.pyplot(fig2)
+
+# ---------- 圖表 3：Temperature ----------
+st.subheader("🌡️ 溫度 (°C)")
+fig3, ax3 = plt.subplots(figsize=(10, 6))
+ax3.scatter(df[df['door_status'] == 'open']["timestamp"], df[df['door_status'] == 'open']["celsius_degree"], color="blue", label='open')
+ax3.scatter(df[df['door_status'] == 'closed']["timestamp"], df[df['door_status'] == 'closed']["celsius_degree"], color="orange", label='closed')
+ax3.axvline(x=critical_time, color='red', linestyle='--', label='0709 13:55')
+ax3.set_title("溫度趨勢")
+ax3.set_xlabel("時間")
+ax3.set_ylabel("Temperature (°C)")
+ax3.set_ylim(20, 35)
+ax3.legend()
+st.pyplot(fig3)
+
+# ---------- 圖表 4：光照強度 ----------
+st.subheader("☀️ 光照強度 (lux)")
+fig4, ax4 = plt.subplots(figsize=(10, 6))
+ax4.scatter(df[df['door_status'] == 'open']["timestamp"], df[df['door_status'] == 'open']["light_intensity"], color="blue", label='open')
+ax4.scatter(df[df['door_status'] == 'closed']["timestamp"], df[df['door_status'] == 'closed']["light_intensity"], color="orange", label='closed')
+ax4.axhline(y=np.mean(df['light_intensity']), color='green', linestyle='--', label='平均光照')
+ax4.axvline(x=critical_time, color='red', linestyle='--', label='0709 13:55')
+ax4.set_title("光照強度趨勢")
+ax4.set_xlabel("時間")
+ax4.set_ylabel("light intensity (lux)")
+ax4.legend()
+st.pyplot(fig4)
