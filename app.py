@@ -17,7 +17,7 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ---------- 讀取資料 ----------
-@st.cache_data(ttl=900)  # 每15分鐘自動重新抓資料
+@st.cache_data(ttl=900)  # 每5分鐘自動重新抓資料
 def load_data():
     now = datetime.now(timezone(timedelta(hours=8)))
     past_72h = now - timedelta(hours=72)
@@ -101,3 +101,46 @@ ax4.set_xlabel("time")
 ax4.set_ylabel("light intensity (lux)")
 ax4.legend()
 st.pyplot(fig4)
+
+
+
+
+# ---------- 圖表 2：Humidity（依 sensor_name 區分） ----------
+st.subheader("💧 濕度 (%)（依 sensor_name 區分）")
+fig5, ax5 = plt.subplots(figsize=(10, 6))
+for name, group in df.dropna(subset=["humidity"]).groupby("sensor_name"):
+    ax5.plot(group["timestamp"], group["humidity"], label=name)
+ax5.axhline(y=np.mean(df["humidity"]), color='green', linestyle='--', label='mean')
+ax5.set_title("Humidity Last 72 hours by Sensor")
+ax5.set_xlabel("time")
+ax5.set_ylabel("Humidity (%)")
+ax5.set_ylim(0, 100)
+ax5.legend()
+st.pyplot(fig5)
+
+
+
+# ---------- 圖表 3：Temperature（依 sensor_name 區分） ----------
+st.subheader("🌡️ 溫度 (°C)（依 sensor_name 區分）")
+fig6, ax6 = plt.subplots(figsize=(10, 6))
+for name, group in df.dropna(subset=["celsius_degree"]).groupby("sensor_name"):
+    ax6.plot(group["timestamp"], group["celsius_degree"], label=name)
+ax6.axhline(y=np.mean(df["celsius_degree"]), color='green', linestyle='--', label='mean')
+ax6.set_title("Temperature Last 72 hours by Sensor")
+ax6.set_xlabel("time")
+ax6.set_ylabel("Temperature (°C)")
+ax6.set_ylim(20, 35)
+ax6.legend()
+st.pyplot(fig6)
+
+# ---------- 圖表 4：光照強度（依 sensor_name 區分） ----------
+st.subheader("☀️ 光照強度 (lux)（依 sensor_name 區分）")
+fig7, ax7 = plt.subplots(figsize=(10, 6))
+for name, group in df.dropna(subset=["light_intensity"]).groupby("sensor_name"):
+    ax7.plot(group["timestamp"], group["light_intensity"], label=name)
+ax7.axhline(y=np.mean(df["light_intensity"]), color='green', linestyle='--', label='mean')
+ax7.set_title("Light Intensity Last 72 hours by Sensor")
+ax7.set_xlabel("time")
+ax7.set_ylabel("light intensity (lux)")
+ax7.legend()
+st.pyplot(fig7)
