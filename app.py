@@ -52,6 +52,27 @@ st.dataframe(latest_df[[
     "light_intensity", "dust", "motion_detected", "door_status"
 ]]) 
 
+# 最近牆面或窗戶 dust 與濕度趨勢
+latest_wall = latest_df[latest_df["sensor_name"] == "wiolink wall"]
+latest_window = latest_df[latest_df["sensor_name"] == "wiolink window"]
+
+if not latest_wall.empty and not latest_window.empty:
+    dust_now = latest_wall.iloc[0]["dust"]
+    humidity_now = latest_wall.iloc[0]["humidity"]
+    door_status = latest_window.iloc[0]["door_status"]
+
+    st.subheader("📡 環境狀態分析與建議")
+
+    if dust_now > 500:
+        if door_status == "closed":
+            st.warning(f"🟠 目前 Dust 為 {dust_now:.1f}，空氣品質不佳，建議開窗通風！")
+        else:
+            st.info(f"🟢 已開窗通風中，但 Dust 數值仍高（{dust_now:.1f}），可觀察後續變化")
+    elif humidity_now < 40:
+        st.info(f"💧 濕度偏低（{humidity_now:.1f}%），可適度關窗避免過度乾燥")
+    elif dust_now < 150 and humidity_now > 50:
+        st.success(f"✅ 室內環境穩定（Dust: {dust_now:.1f}, 濕度: {humidity_now:.1f}%），維持現狀即可")
+
 # ---------- 圖表 1：Dust ----------
 st.subheader("🟤 灰塵（每公升粒子數） (pcs/0.01cf)")
 fig1, ax1 = plt.subplots(figsize=(10, 6))
