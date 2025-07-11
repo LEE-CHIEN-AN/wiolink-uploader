@@ -45,11 +45,28 @@ critical_time = pd.to_datetime("2025-07-09 13:55:00")
 
 # ---------- 各裝置最新資料表格 ----------
 st.subheader("🆕 各裝置最新一筆感測資料")
-latest_df = df.sort_values(by="timestamp", ascending=False)
+
+# 僅保留指定裝置
+device_names = ["wiolink door", "wiolink wall", "wiolink window"]
+filtered_df = df[df["sensor_name"].isin(device_names)]
+
+# 依 timestamp 遞減排序後，各裝置取第一筆資料
+latest_df = (
+    filtered_df.sort_values(by="timestamp", ascending=False)
+    .drop_duplicates(subset=["sensor_name"])
+)
+
+# 時間格式化顯示
 latest_df["timestamp"] = latest_df["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
-st.dataframe(latest_df[[
-    "timestamp", "sensor_name", "humidity", "celsius_degree", "light_intensity", "dust", "motion_detected", "door_status"
-]].reset_index(drop=True), use_container_width=True)
+
+# 顯示資料表
+st.dataframe(
+    latest_df[[
+        "timestamp", "sensor_name", "humidity", "celsius_degree",
+        "light_intensity", "dust", "motion_detected", "door_status"
+    ]].reset_index(drop=True),
+    use_container_width=True
+)
 
 # ---------- 圖表 1：Dust ----------
 st.subheader("🟤 灰塵（每公升粒子數） (pcs/0.01cf)")
