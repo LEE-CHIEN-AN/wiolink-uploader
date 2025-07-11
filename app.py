@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 # 字型設定（針對 Windows 中文支援）
 import matplotlib
-matplotlib.rc('font', family='Microsoft JhengHei')
+matplotlib.rc('font', family='Noto Sans CJK TC')
 
 # ---------- Supabase 設定 ----------
 # Supabase 設定
