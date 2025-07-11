@@ -45,7 +45,7 @@ critical_time = pd.to_datetime("2025-07-09 13:55:00")
 
 # ---------- 各裝置最新資料表格 ----------
 st.subheader("🆕 各裝置最新一筆感測資料")
-latest_df = df.sort_values(by="timestamp", ascending=False).drop_duplicates(subset=["sensor_name"])
+latest_df = df.sort_values(by="timestamp", ascending=False)
 latest_df["timestamp"] = latest_df["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
 st.dataframe(latest_df[[
     "timestamp", "sensor_name", "humidity", "celsius_degree", "light_intensity", "dust", "motion_detected", "door_status"
