@@ -40,7 +40,6 @@ SENSORS = {
 # === 從單一板子抓取所有感測器資料 ===
 def get_sensor_data(device):
     result = {
-        "timestamp": datetime.now(timezone(timedelta(hours=8))).isoformat(),  # 台灣時間
         "sensor_name": device["name"],
         "humidity": None,
         "light_intensity": None,
@@ -48,7 +47,6 @@ def get_sensor_data(device):
         "dust": None,
         "celsius_degree": None,
         "mag_approach": None,  # 磁簧開關狀態（門是否靠近磁鐵）
-        "door_status": None,  # 新增的門狀態描述（"closed" or "open"）
     }
 
     for key, path in SENSORS.items():
