@@ -40,7 +40,7 @@ SENSORS = {
 # === 從單一板子抓取所有感測器資料 ===
 def get_sensor_data(device):
     result = {
-        "sensor_name": device["name"],
+        "name": device["name"],
         "humidity": None,
         "light_intensity": None,
         "motion_detected": None,  # 動作偵測感測器（目前未使用）
