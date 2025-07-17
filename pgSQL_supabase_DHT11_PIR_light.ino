@@ -247,7 +247,7 @@ void loop() {
       // Supabase insert
       String jsonData = String("{") +
       "\"sensor_name\": \"wiolink_Arduino\"," +
-      "\"humidity\": " + String((h,2) + "," +
+      "\"humidity\": " + String(h,2) + "," +
       "\"light_intensity\": " + String(lux) + "," +
       "\"motion_detected\": " + String(motion) + "," +
       "\"celsius_degree\": " + String(t, 2) + "," +
