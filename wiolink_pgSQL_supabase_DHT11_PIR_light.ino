@@ -41,7 +41,7 @@ const char* pass = "116eceac";
 WiFiClient client;
 
 
-IPAddress PGIP(10,188,40,129);     // your PostgreSQL server IP
+IPAddress PGIP(192,168,0,45);   //connect 611 wifi's IP  // your PostgreSQL server IP
 const char user[] = "postgres";       // your database user
 const char password[] = "Anjapan12";   // your database password
 const char dbname[] = "postgres";         // your database name
@@ -66,7 +66,7 @@ int pg_status = 0;
 //millis================================
 //Set every 60 sec read DHT
 unsigned long previousMillis = 0;  // variable to store the last time the task was run
-const long interval = 60000;        // time interval in milliseconds (eg 1000ms = 1 second)
+const long interval = 60000 * 10; //1 min  = 60000       // time interval in milliseconds (eg 1000ms = 1 second)
 //======================================
 
 void setup() {
