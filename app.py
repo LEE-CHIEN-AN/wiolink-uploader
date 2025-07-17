@@ -31,7 +31,7 @@ def load_data():
     df = pd.DataFrame(response.data)
     df["time"] = pd.to_datetime(df["time"], errors="coerce")
     df["dust"] = pd.to_numeric(df["dust"], errors="coerce")
-    df = df.dropna(subset=["time", "sensor_name"])
+    df = df.dropna(subset=["time", "name"])
     df = df[df["dust"] != 0.62]  # 移除異常值
     return df
 
@@ -44,7 +44,7 @@ critical_time = pd.to_datetime("2025-07-09 13:55:00")
 
 # ---------- 各裝置最新資料表格 ----------
 st.subheader("🆕 各裝置最新一筆感測資料")
-latest_df = df.sort_values(by="time", ascending=False).drop_duplicates(subset=["sensor_name"])
+latest_df = df.sort_values(by="time", ascending=False).drop_duplicates(subset=["name"])
 latest_df["time"] = latest_df["time"].dt.strftime("%Y-%m-%d %H:%M:%S")
 st.dataframe(latest_df[[
     "time", "name", "humidity", "celsius_degree",
@@ -52,9 +52,9 @@ st.dataframe(latest_df[[
 ]]) 
 
 # 最近牆面或窗戶 dust 與濕度趨勢
-latest_wall = latest_df[latest_df["sensor_name"] == "wiolink wall"]
-latest_window = latest_df[latest_df["sensor_name"] == "wiolink window"]
-latest_door = latest_df[latest_df["sensor_name"] == "wiolink door"]
+latest_wall = latest_df[latest_df["c"] == "wiolink wall"]
+latest_window = latest_df[latest_df["name"] == "wiolink window"]
+latest_door = latest_df[latest_df["name"] == "wiolink door"]
 
 if not latest_wall.empty and not latest_window.empty:
     dust_now = latest_wall.iloc[0]["dust"]
@@ -129,10 +129,10 @@ st.pyplot(fig4)
 
 
 
-# ---------- 圖表 2：Humidity（依 sensor_name 區分） ----------
-st.subheader("💧 濕度 (%)（依 sensor_name 區分）")
+# ---------- 圖表 2：Humidity（依 name 區分） ----------
+st.subheader("💧 濕度 (%)（依 name 區分）")
 fig5, ax5 = plt.subplots(figsize=(10, 6))
-for name, group in df.dropna(subset=["humidity"]).groupby("sensor_name"):
+for name, group in df.dropna(subset=["humidity"]).groupby("name"):
     ax5.plot(group["time"], group["humidity"], label=name)
 ax5.axhline(y=np.mean(df["humidity"]), color='red', linestyle='--', label='mean')
 ax5.set_title("Humidity Last 72 hours by Sensor")
@@ -144,10 +144,10 @@ st.pyplot(fig5)
 
 
 
-# ---------- 圖表 3：Temperature（依 sensor_name 區分） ----------
-st.subheader("🌡️ 溫度 (°C)（依 sensor_name 區分）")
+# ---------- 圖表 3：Temperature（依 name 區分） ----------
+st.subheader("🌡️ 溫度 (°C)（依 name 區分）")
 fig6, ax6 = plt.subplots(figsize=(10, 6))
-for name, group in df.dropna(subset=["celsius_degree"]).groupby("sensor_name"):
+for name, group in df.dropna(subset=["celsius_degree"]).groupby("name"):
     ax6.plot(group["time"], group["celsius_degree"], label=name)
 ax6.axhline(y=np.mean(df["celsius_degree"]), color='red', linestyle='--', label='mean')
 ax6.set_title("Temperature Last 72 hours by Sensor")
@@ -157,10 +157,10 @@ ax6.set_ylim(20, 35)
 ax6.legend()
 st.pyplot(fig6)
 
-# ---------- 圖表 4：光照強度（依 sensor_name 區分） ----------
-st.subheader("☀️ 光照強度 (lux)（依 sensor_name 區分）")
+# ---------- 圖表 4：光照強度（依 name 區分） ----------
+st.subheader("☀️ 光照強度 (lux)（依 name 區分）")
 fig7, ax7 = plt.subplots(figsize=(10, 6))
-for name, group in df.dropna(subset=["light_intensity"]).groupby("sensor_name"):
+for name, group in df.dropna(subset=["light_intensity"]).groupby("name"):
     ax7.plot(group["time"], group["light_intensity"], label=name)
 ax7.axhline(y=np.mean(df["light_intensity"]), color='red', linestyle='--', label='mean')
 ax7.set_title("Light Intensity Last 72 hours by Sensor")
