@@ -36,8 +36,8 @@ float dust = -1.0;
 //Setup for DHT======================================
 
 //Setup connection and Database=====================
-const char* ssid = "jie"; //when you update code to board ,your computer also need to connect the same wifi
-const char* pass = "0926197320";
+const char* ssid = "CAECE611 2G"; //when you update code to board ,your computer also need to connect the same wifi
+const char* pass = "116eceac";
 WiFiClient client;
 
 
@@ -246,8 +246,8 @@ void loop() {
       
       // Supabase insert
       String jsonData = String("{") +
-      "\"sensor_name\": \"wiolink_Arduino\"," +
-      "\"humidity\": " + String(h,2) + "," +
+      "\"name\": \"wiolink_Arduino\"," +
+      "\"humidity\": " + String((int)h) + "," +
       "\"light_intensity\": " + String(lux) + "," +
       "\"motion_detected\": " + String(motion) + "," +
       "\"celsius_degree\": " + String(t, 2) + "," +
