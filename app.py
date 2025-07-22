@@ -56,16 +56,17 @@ latest_wall = latest_df[latest_df["name"] == "wiolink wall"]
 latest_window = latest_df[latest_df["name"] == "wiolink window"]
 latest_door = latest_df[latest_df["name"] == "wiolink door"]
 latest_door = latest_df[latest_df["name"] == "wiolink_Arduino"]
+latest_door = latest_df[latest_df["name"] == "wiolink_touch"]
 
 if not latest_wall.empty and not latest_window.empty:
     dust_now = latest_wall.iloc[0]["dust"]
     humidity_now = latest_wall.iloc[0]["humidity"]
-    door_status = latest_window.iloc[0]["door_status"]
+    door_status = latest_window.iloc[0]["mag_approach"]
 
     st.subheader("📡 環境狀態分析與建議")
 
     if dust_now > 500:
-        if door_status == "closed":
+        if door_status == 1:
             st.warning(f"🟠 目前 Dust 為 {dust_now:.1f}，空氣品質不佳，建議開窗通風！")
         else:
             st.info(f"🟢 已開窗通風中，但 Dust 數值仍高（{dust_now:.1f}），可觀察後續變化")
