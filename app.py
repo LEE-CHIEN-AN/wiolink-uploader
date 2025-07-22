@@ -56,7 +56,7 @@ latest_wall = latest_df[latest_df["name"] == "wiolink wall"]
 latest_window = latest_df[latest_df["name"] == "wiolink window"]
 latest_door = latest_df[latest_df["name"] == "wiolink door"]
 latest_door = latest_df[latest_df["name"] == "wiolink_Arduino"]
-latest_door = latest_df[latest_df["name"] == "wiolink_touch"]
+#latest_door = latest_df[latest_df["name"] == "wiolink_touch"]
 
 if not latest_wall.empty and not latest_window.empty:
     dust_now = latest_wall.iloc[0]["dust"]
