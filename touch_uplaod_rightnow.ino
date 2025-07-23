@@ -289,17 +289,17 @@ void uploadSensorData() {
     
     // 上傳到 PostgreSQL
     if (pg_status == 2) {
-      snprintf(inbuf, sizeof(inbuf),
-        "insert into sensor_arduino (name,temp,humidity,motion_detected,light_intensity,touch) "
-        "values('wiolink_Arduino',%.2f,%d,%d,%d,%d)",
-        t, h, motion, lux, touch);
-      Serial.print("Generated SQL: ");
-      Serial.println(inbuf);
-    }
+        snprintf(inbuf, sizeof(inbuf),
+          "insert into sensor_arduino (name,temp,humidity,motion_detected,light_intensity,touch) "
+          "values('407_air',%.2f,%d,%d,%d,%d)",
+          t, h, motion, lux,touch); // ← 修正後加入 touch
+        Serial.print("Generated SQL: ");
+        Serial.println(inbuf);
+      }
 
     // 上傳到 Supabase
     String jsonData = String("{") +
-      "\"name\": \"wiolink_touch\"," +
+      "\"name\": \"407_aircondition\"," +
       "\"humidity\": " + String((int)h) + "," +
       "\"light_intensity\": " + String(lux) + "," +
       "\"motion_detected\": " + String(motion) + "," +
