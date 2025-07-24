@@ -106,13 +106,13 @@ axs[0, 0].set_ylabel("ppm")
 axs[0, 0].tick_params(axis='x', rotation=45)
 
 # TVOC
-axs[0, 1].plot(df["time"], df["total_voc"], marker='o', color='brown')
+axs[0, 1].plot(df["time"], df["total_voc"], marker='o', color='orange')
 axs[0, 1].set_title("TVOC")
 axs[0, 1].set_ylabel("ppb")
 axs[0, 1].tick_params(axis='x', rotation=45)
 
 # Temperature
-axs[1, 0].plot(df["time"], df["celsius_degree"], marker='o', color='orange')
+axs[1, 0].plot(df["time"], df["celsius_degree"], marker='o', color='yellow')
 axs[1, 0].set_title("Temperature")
 axs[1, 0].set_ylabel("°C")
 axs[1, 0].tick_params(axis='x', rotation=45)
@@ -159,7 +159,7 @@ axs[0].set_ylabel("lux")
 axs[0].tick_params(axis='x', rotation=45)
 
 # Temperature
-axs[1].plot(df_604["time"], df_604["celsius_degree"], marker='o', color='orange')
+axs[1].plot(df_604["time"], df_604["celsius_degree"], marker='o', color='yellow')
 axs[1].set_title("Temperature")
 axs[1].set_ylabel("°C")
 axs[1].tick_params(axis='x', rotation=45)
