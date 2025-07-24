@@ -42,6 +42,7 @@ st.title("🌿 教室感測器資料儀表板")
 st.write("資料時間範圍：最近 72 小時，每 15 分鐘更新一次。")
 critical_time = pd.to_datetime("2025-07-09 13:55:00")
 
+
 # ---------- 各裝置最新資料表格 ----------
 st.subheader("🆕 各裝置最新一筆感測資料")
 latest_df = df.sort_values(by="time", ascending=False).drop_duplicates(subset=["name"])
@@ -76,6 +77,41 @@ if not latest_wall.empty and not latest_window.empty:
         st.success(f"✅ 室內環境穩定（Dust: {dust_now:.1f}, 濕度: {humidity_now:.1f}%），維持現狀即可")
 
 
+# ---------- 圖表：407 空氣品質感測器數據（多變量趨勢圖） ----------
+st.subheader("🌫️ 407 空氣品質感測器數據趨勢")
+
+# 過濾特定感測器資料
+df_air = df[df["name"] == "407_air_quality"].copy()
+
+# 轉換與清理欄位
+df_air["time"] = pd.to_datetime(df_air["time"], errors="coerce")
+df_air = df_air.sort_values("time")
+
+# 補值處理（可選）：將 null 值補上前一筆資料（視需求決定是否補）
+df_air = df_air.fillna(method="ffill")
+
+# 設定畫圖欄位與標籤
+metrics = {
+    "humidity": "濕度 (%)",
+    "celsius_degree": "溫度 (°C)",
+    "dust": "灰塵濃度 (pcs/0.01cf)",
+    "total_voc": "揮發性有機物 (ppb)",
+    "co2eq": "CO2 等效濃度 (ppm)"
+}
+
+# 畫圖
+fig, ax = plt.subplots(figsize=(12, 6))
+for col, label in metrics.items():
+    if col in df_air.columns:
+        ax.plot(df_air["time"], df_air[col], label=label)
+
+ax.set_title("407 教室空氣品質感測趨勢")
+ax.set_xlabel("時間")
+ax.set_ylabel("數值")
+ax.legend()
+ax.grid(True)
+
+st.pyplot(fig)
 
 # ---------- 圖表 1：Dust ----------
 st.subheader("🟤 灰塵（每公升粒子數） (pcs/0.01cf)")
