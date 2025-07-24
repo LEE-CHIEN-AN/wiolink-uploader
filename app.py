@@ -46,23 +46,25 @@ axs[0, 0].set_title("CO₂")
 axs[0, 0].set_ylabel("ppm")
 axs[0, 0].tick_params(axis='x', rotation=45)
 
-# Temperature
-axs[0, 1].plot(df["time"], df["celsius_degree"], marker='o', color='orange')
-axs[0, 1].set_title("Temperature")
-axs[0, 1].set_ylabel("°C")
+# TVOC
+axs[0, 1].plot(df["time"], df["total_voc"], marker='o', color='brown')
+axs[0, 1].set_title("TVOC")
+axs[0, 1].set_ylabel("ppb")
 axs[0, 1].tick_params(axis='x', rotation=45)
 
-# Humidity
-axs[1, 0].plot(df["time"], df["humidity"], marker='o', color='blue')
-axs[1, 0].set_title("Humidity")
-axs[1, 0].set_ylabel("%")
+# Temperature
+axs[1, 0].plot(df["time"], df["celsius_degree"], marker='o', color='orange')
+axs[1, 0].set_title("Temperature")
+axs[1, 0].set_ylabel("°C")
 axs[1, 0].tick_params(axis='x', rotation=45)
 
-# TVOC
-axs[1, 1].plot(df["time"], df["total_voc"], marker='o', color='brown')
-axs[1, 1].set_title("TVOC")
-axs[1, 1].set_ylabel("ppb")
+# Humidity
+axs[1, 1].plot(df["time"], df["humidity"], marker='o', color='blue')
+axs[1, 1].set_title("Humidity")
+axs[1, 1].set_ylabel("%")
 axs[1, 1].tick_params(axis='x', rotation=45)
+
+
 
 plt.tight_layout()
 st.pyplot(fig)
@@ -89,7 +91,7 @@ df_604 = load_data_604()
 # ========== 畫面與圖表 ==========
 st.title("🌱 604 環境感測看板")
 
-fig, axs = plt.subplots(1, 3, figsize=(18, 4))
+fig, axs = plt.subplots(1, 3, figsize=(18, 8))
 
 # light
 axs[0].plot(df_604["time"], df_604["light_intensity"], marker='o', color='green')
