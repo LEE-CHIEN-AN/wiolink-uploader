@@ -150,7 +150,8 @@ def load_data_604():
 df_604 = load_data_604()
 
 # ========== 畫面與圖表 ==========
-st.title("🌱 604 環境感測看板")
+
+st.title("🌱 604 空氣品質即時概況")
 # 取最後一筆資料
 latest = df_604.iloc[-1]
 
@@ -205,6 +206,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+st.title("🌱 604 環境感測看板")
 
 fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
