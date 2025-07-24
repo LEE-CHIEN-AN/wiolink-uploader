@@ -178,6 +178,7 @@ st.markdown(
     .orange {{ background-color: #FF9800; }}
     .yellow {{ background-color: #FFC107; color: black; }}
     .blue {{ background-color: #2196F3; }}
+    .brown {{ background-color: #A52A2A:}}
     .value {{
         font-size: 32px;
         font-weight: bold;
@@ -189,7 +190,7 @@ st.markdown(
     </style>
 
     <div class="card-container">
-        <div class="card green">
+        <div class="card brown">
             <div class="label">Light intensity</div>
             <div class="value">{latest["light_intensity"]} lux</div>
         </div>
