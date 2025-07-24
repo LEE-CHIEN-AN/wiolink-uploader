@@ -205,4 +205,8 @@ ax7.set_title("Light Intensity Last 72 hours by Sensor")
 ax7.set_xlabel("time")
 ax7.set_ylabel("light intensity (lux)")
 ax7.legend()
+import matplotlib.dates as mdates
+ax7.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
+ax7.xaxis.set_major_locator(mdates.HourLocator(interval=6))  # 每 6 小時顯示一個刻度
+fig7.autofmt_xdate()  # 旋轉標籤
 st.pyplot(fig7)
