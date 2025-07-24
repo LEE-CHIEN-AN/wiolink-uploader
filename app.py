@@ -77,11 +77,11 @@ st.markdown(
     <div class="card-container">
         <div class="card green">
             <div class="label">CO₂</div>
-            <div class="value">{latest["co2eq"]} ppm</div>
+            <div class="value">{latest["co2eq"]}ppm</div>
         </div>
         <div class="card orange">
             <div class="label">tVOC</div>
-            <div class="value">{latest["total_voc"]}</div>
+            <div class="value">{latest["total_voc"]}ppb</div>
         </div>
         <div class="card yellow">
             <div class="label">Temp</div>
