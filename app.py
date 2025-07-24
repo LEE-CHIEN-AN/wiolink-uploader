@@ -74,7 +74,7 @@ def load_data_604():
     start_time = now - timedelta(hours=12)
 
     response = supabase.table("wiolink") \
-        .select("time, name, co2eq, celsius_degree, humidity, total_voc") \
+        .select("time, name, light_intensity, celsius_degree, humidity") \
         .eq("name", "wiolink wall") \
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
