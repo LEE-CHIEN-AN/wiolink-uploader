@@ -112,7 +112,7 @@ axs[0, 1].set_ylabel("ppb")
 axs[0, 1].tick_params(axis='x', rotation=45)
 
 # Temperature
-axs[1, 0].plot(df["time"], df["celsius_degree"], marker='o', color='yellow')
+axs[1, 0].plot(df["time"], df["celsius_degree"], marker='o', color='gold')
 axs[1, 0].set_title("Temperature")
 axs[1, 0].set_ylabel("°C")
 axs[1, 0].tick_params(axis='x', rotation=45)
@@ -153,13 +153,13 @@ st.title("🌱 604 環境感測看板")
 fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
 # light
-axs[0].plot(df_604["time"], df_604["light_intensity"], marker='o', color='green')
+axs[0].plot(df_604["time"], df_604["light_intensity"], marker='o', color='brown')
 axs[0].set_title("Light intensity")
 axs[0].set_ylabel("lux")
 axs[0].tick_params(axis='x', rotation=45)
 
 # Temperature
-axs[1].plot(df_604["time"], df_604["celsius_degree"], marker='o', color='yellow')
+axs[1].plot(df_604["time"], df_604["celsius_degree"], marker='o', color='gold')
 axs[1].set_title("Temperature")
 axs[1].set_ylabel("°C")
 axs[1].tick_params(axis='x', rotation=45)
