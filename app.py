@@ -76,20 +76,20 @@ st.markdown(
 
     <div class="card-container">
         <div class="card green">
-            <div class="value">{latest["co2eq"]} ppm</div>
             <div class="label">CO₂</div>
+            <div class="value">{latest["co2eq"]} ppm</div>
         </div>
         <div class="card orange">
-            <div class="value">{latest["total_voc"]}</div>
             <div class="label">tVOC</div>
+            <div class="value">{latest["total_voc"]}</div>
         </div>
         <div class="card yellow">
-            <div class="value">{latest["celsius_degree"]:.1f}°C</div>
             <div class="label">Temp</div>
+            <div class="value">{latest["celsius_degree"]:.1f}°C</div>
         </div>
         <div class="card blue">
-            <div class="value">{latest["humidity"]:.0f}%</div>
             <div class="label">Humidity</div>
+            <div class="value">{latest["humidity"]:.0f}%</div>
         </div>
     </div>
     """,
