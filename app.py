@@ -90,22 +90,22 @@ df_604 = load_data_604()
 # ========== 畫面與圖表 ==========
 st.title("🌱 604 環境感測看板")
 
-fig, axs = plt.subplots(1, 3, figsize=(12, 8))
+fig, axs = plt.subplots(1, 3, figsize=(18, 4))
 
-# CO2
-axs[0, 0].plot(df["time"], df["light_intensity"], marker='o', color='green')
+# light
+axs[0, 0].plot(df_604["time"], df_604["light_intensity"], marker='o', color='green')
 axs[0, 0].set_title("Light intensity")
 axs[0, 0].set_ylabel("lux")
 axs[0, 0].tick_params(axis='x', rotation=45)
 
 # Temperature
-axs[0, 1].plot(df["time"], df["celsius_degree"], marker='o', color='orange')
+axs[0, 1].plot(df_604["time"], df_604["celsius_degree"], marker='o', color='orange')
 axs[0, 1].set_title("Temperature")
 axs[0, 1].set_ylabel("°C")
 axs[0, 1].tick_params(axis='x', rotation=45)
 
 # Humidity
-axs[0, 2].plot(df["time"], df["humidity"], marker='o', color='blue')
+axs[0, 2].plot(df_604["time"], df_604["humidity"], marker='o', color='blue')
 axs[0, 2].set_title("Humidity")
 axs[0, 2].set_ylabel("%")
 axs[0, 2].tick_params(axis='x', rotation=45)
