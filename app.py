@@ -91,7 +91,7 @@ df_604 = load_data_604()
 # ========== 畫面與圖表 ==========
 st.title("🌱 604 環境感測看板")
 
-fig, axs = plt.subplots(1, 3, figsize=(18, 8))
+fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
 # light
 axs[0].plot(df_604["time"], df_604["light_intensity"], marker='o', color='green')
