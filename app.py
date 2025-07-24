@@ -178,7 +178,7 @@ st.markdown(
     .orange {{ background-color: #FF9800; }}
     .yellow {{ background-color: #FFC107; color: black; }}
     .blue {{ background-color: #2196F3; }}
-    .brown {{ background-color: #A52A2A:}}
+    .brown {{ background-color: #A52A2A;}}
     .value {{
         font-size: 32px;
         font-weight: bold;
