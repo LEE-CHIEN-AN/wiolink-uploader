@@ -36,8 +36,67 @@ def load_data_407():
 df = load_data_407()
 
 # ========== 畫面與圖表 ==========
-st.title("🌱 407 空氣品質感測看板")
+st.title("🌱 407 空氣品質即時概況")
 
+# 取最後一筆資料
+latest = df.iloc[-1]
+
+# 以 HTML + CSS 呈現卡片
+st.markdown(
+    f"""
+    <style>
+    .card-container {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }}
+    .card {{
+        padding: 20px;
+        border-radius: 15px;
+        width: 160px;
+        color: white;
+        text-align: center;
+        font-family: 'Noto Sans CJK TC', sans-serif;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }}
+    .green {{ background-color: #4CAF50; }}
+    .orange {{ background-color: #FF9800; }}
+    .yellow {{ background-color: #FFC107; color: black; }}
+    .blue {{ background-color: #2196F3; }}
+    .value {{
+        font-size: 32px;
+        font-weight: bold;
+    }}
+    .label {{
+        font-size: 18px;
+        margin-top: 5px;
+    }}
+    </style>
+
+    <div class="card-container">
+        <div class="card green">
+            <div class="value">{latest["co2eq"]} ppm</div>
+            <div class="label">CO₂</div>
+        </div>
+        <div class="card orange">
+            <div class="value">{latest["total_voc"]}</div>
+            <div class="label">tVOC</div>
+        </div>
+        <div class="card yellow">
+            <div class="value">{latest["celsius_degree"]:.1f}°C</div>
+            <div class="label">Temp</div>
+        </div>
+        <div class="card blue">
+            <div class="value">{latest["humidity"]:.0f}%</div>
+            <div class="label">Humidity</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.title("🌱 407 空氣品質感測看板")
 fig, axs = plt.subplots(2, 2, figsize=(12, 8))
 
 # CO2
