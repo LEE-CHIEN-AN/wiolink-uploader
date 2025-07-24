@@ -127,6 +127,8 @@ axs[1, 1].tick_params(axis='x', rotation=45)
 
 plt.tight_layout()
 st.pyplot(fig)
+
+
 #===========================================
 # ========== 資料抓取 ==========
 @st.cache_data(ttl=300)  # 每5分鐘更新
@@ -149,6 +151,60 @@ df_604 = load_data_604()
 
 # ========== 畫面與圖表 ==========
 st.title("🌱 604 環境感測看板")
+# 取最後一筆資料
+latest = df_604.iloc[-1]
+
+# 以 HTML + CSS 呈現卡片
+st.markdown(
+    f"""
+    <style>
+    .card-container {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }}
+    .card {{
+        padding: 20px;
+        border-radius: 15px;
+        width: 160px;
+        color: white;
+        text-align: center;
+        font-family: 'Noto Sans CJK TC', sans-serif;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }}
+    .green {{ background-color: #4CAF50; }}
+    .orange {{ background-color: #FF9800; }}
+    .yellow {{ background-color: #FFC107; color: black; }}
+    .blue {{ background-color: #2196F3; }}
+    .value {{
+        font-size: 32px;
+        font-weight: bold;
+    }}
+    .label {{
+        font-size: 18px;
+        margin-top: 5px;
+    }}
+    </style>
+
+    <div class="card-container">
+        <div class="card green">
+            <div class="label">Light intensity</div>
+            <div class="value">{latest["light_intensity"]} lux</div>
+        </div>
+        <div class="card yellow">
+            <div class="label">Temp</div>
+            <div class="value">{latest["celsius_degree"]:.1f}°C</div>
+        </div>
+        <div class="card blue">
+            <div class="label">Humidity</div>
+            <div class="value">{latest["humidity"]:.0f}%</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
