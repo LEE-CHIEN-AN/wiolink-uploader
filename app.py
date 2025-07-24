@@ -49,7 +49,7 @@ latest_df = df.sort_values(by="time", ascending=False).drop_duplicates(subset=["
 latest_df["time"] = latest_df["time"].dt.strftime("%Y-%m-%d %H:%M:%S")
 st.dataframe(latest_df[[
     "time", "name", "humidity", "celsius_degree",
-    "light_intensity", "dust", "motion_detected"
+    "light_intensity", "dust", "motion_detected","total_voc","co2eq"
 ]]) 
 
 # 最近牆面或窗戶 dust 與濕度趨勢
@@ -57,7 +57,7 @@ latest_wall = latest_df[latest_df["name"] == "wiolink wall"]
 latest_window = latest_df[latest_df["name"] == "wiolink window"]
 latest_door = latest_df[latest_df["name"] == "wiolink door"]
 latest_door = latest_df[latest_df["name"] == "wiolink_Arduino"]
-#latest_door = latest_df[latest_df["name"] == "wiolink_touch"]
+latest_door = latest_df[latest_df["name"] == "407_air_quality"]
 
 if not latest_wall.empty and not latest_window.empty:
     dust_now = latest_wall.iloc[0]["dust"]
