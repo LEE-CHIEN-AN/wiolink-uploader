@@ -212,19 +212,19 @@ st.title("🌱 407 環境感測看板")
 fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
 # light
-axs[0].plot(df_407["time"], df_604["light_intensity"], marker='o', color='brown')
+axs[0].plot(df_407["time"], df_407["light_intensity"], marker='o', color='brown')
 axs[0].set_title("Light intensity")
 axs[0].set_ylabel("lux")
 axs[0].tick_params(axis='x', rotation=45)
 
 # Temperature
-axs[1].plot(df_407["time"], df_604["celsius_degree"], marker='o', color='gold')
+axs[1].plot(df_407["time"], df_407["celsius_degree"], marker='o', color='gold')
 axs[1].set_title("Temperature")
 axs[1].set_ylabel("°C")
 axs[1].tick_params(axis='x', rotation=45)
 
 # Humidity
-axs[2].plot(df_407["time"], df_604["humidity"], marker='o', color='blue')
+axs[2].plot(df_407["time"], df_407["humidity"], marker='o', color='blue')
 axs[2].set_title("Humidity")
 axs[2].set_ylabel("%")
 axs[2].tick_params(axis='x', rotation=45)
