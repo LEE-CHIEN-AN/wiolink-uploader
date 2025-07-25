@@ -18,13 +18,13 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ========== 資料抓取 ==========
 @st.cache_data(ttl=300)  # 每5分鐘更新
-def load_data_407():
+def load_data_604():
     now = datetime.now(timezone(timedelta(hours=8)))
     start_time = now - timedelta(hours=12)
 
     response = supabase.table("wiolink") \
         .select("time, name, co2eq, celsius_degree, humidity, total_voc") \
-        .eq("name", "407_air_quality") \
+        .eq("name", "604_air_quality") \
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
         .execute()
@@ -33,10 +33,10 @@ def load_data_407():
     df["time"] = pd.to_datetime(df["time"])
     return df.dropna()
 
-df = load_data_407()
+df = load_data_604()
 
 # ========== 畫面與圖表 ==========
-st.title("🌱 407 空氣品質即時概況")
+st.title("🌱 604 空氣品質即時概況")
 
 # 取最後一筆資料
 latest = df.iloc[-1]
@@ -96,7 +96,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("🌱 407 空氣品質感測看板")
+st.title("🌱 604 空氣品質感測看板")
 fig, axs = plt.subplots(2, 2, figsize=(12, 8))
 
 # CO2
