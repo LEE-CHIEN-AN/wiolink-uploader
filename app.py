@@ -110,7 +110,7 @@ st.markdown(
         </div>
         <div class="card brown">
             <div class="label">Light Intensity</div>
-            <div class="value">{latest_light["light_intensity"]:.0f}%</div>
+            <div class="value">{latest_light["light_intensity"]:.0f} lux</div>
         </div>
     </div>
     """,
