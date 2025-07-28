@@ -362,7 +362,7 @@ st.markdown(
 
 st.title("🌱 407 環境感測看板")
 
-fig, axs = plt.subplots(1, 3, figsize=(18, 8))
+fig, axs = plt.subplots(1, 3, figsize=(18, 6))
 
 # light
 axs[0].plot(df_407["time"], df_407["light_intensity"], marker='o', color='brown')
