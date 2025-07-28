@@ -120,7 +120,7 @@ st.markdown(
 )
 
 st.title("🌱 604 空氣品質感測看板")
-fig, axs = plt.subplots(2, 2, figsize=(16, 12))
+fig, axs = plt.subplots(3, 2, figsize=(16, 12))
 
 # CO2
 axs[0, 0].plot(df["time"], df["co2eq"], marker='o', color='green')
@@ -146,7 +146,11 @@ axs[1, 1].set_title("Humidity")
 axs[1, 1].set_ylabel("%")
 axs[1, 1].tick_params(axis='x', rotation=45)
 
-
+# light
+axs[2,0].plot(df_light["time"], df_light["light_intensity"], marker='o', color='brown')
+axs[2,0].set_title("Light intensity")
+axs[2,0].set_ylabel("lux")
+axs[2,0].tick_params(axis='x', rotation=45)
 
 plt.tight_layout()
 st.pyplot(fig)
