@@ -28,18 +28,34 @@ def load_data_604():
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
         .execute()
-
+  
     df = pd.DataFrame(response.data)
     df["time"] = pd.to_datetime(df["time"])
     return df.dropna()
 
-df = load_data_604()
+def load_data_604light():
+    now = datetime.now(timezone(timedelta(hours=8)))
+    start_time = now - timedelta(hours=12)
 
+    response = supabase.table("wiolink") \
+        .select("time, name, light_intensity") \
+        .eq("name", "wiolink door") \
+        .gte("time", start_time.isoformat()) \
+        .order("time", desc=False) \
+        .execute()
+
+    df = pd.DataFrame(response.data)
+    df["time"] = pd.to_datetime(df["time"])
+    return df.dropna()
+    
+df = load_data_604()
+df_light  = load_data_604light()
 # ========== 畫面與圖表 ==========
 st.title("🌱 604 空氣品質即時概況")
 
 # 取最後一筆資料
 latest = df.iloc[-1]
+latest_light = df_light.iloc[-1]
 
 # 以 HTML + CSS 呈現卡片
 st.markdown(
@@ -64,6 +80,7 @@ st.markdown(
     .orange {{ background-color: #FF9800; }}
     .yellow {{ background-color: #FFC107; color: black; }}
     .blue {{ background-color: #2196F3; }}
+    .brown {{ background-color: #A52A2A;}}
     .value {{
         font-size: 32px;
         font-weight: bold;
@@ -77,11 +94,11 @@ st.markdown(
     <div class="card-container">
         <div class="card green">
             <div class="label">CO₂</div>
-            <div class="value">{latest["co2eq"]}ppm</div>
+            <div class="value">{latest["co2eq"]} ppm</div>
         </div>
         <div class="card orange">
             <div class="label">tVOC</div>
-            <div class="value">{latest["total_voc"]}ppb</div>
+            <div class="value">{latest["total_voc"]} ppb</div>
         </div>
         <div class="card yellow">
             <div class="label">Temp</div>
@@ -90,6 +107,10 @@ st.markdown(
         <div class="card blue">
             <div class="label">Humidity</div>
             <div class="value">{latest["humidity"]:.0f}%</div>
+        </div>
+        <div class="card brown">
+            <div class="label">Light Intensity</div>
+            <div class="value">{latest_light["light_intensity"]:.0f}%</div>
         </div>
     </div>
     """,
