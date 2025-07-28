@@ -110,9 +110,10 @@ ESP8266WiFiMulti wifiMulti; // 建立一個ESP8266WiFiMulti類別的實體變數
 
 //Setup connection and Database=====================
 //IPAddress PGIP(192,168,0,45);   //connect 611 wifi's IP  // your PostgreSQL server IP
-IPAddress PGIP(192,168,50,35);  //connect rlab wifi's IP
+//IPAddress PGIP(192,168,50,35);  //connect rlab wifi's IP
 //IPAddress PGIP(10,188,40,129);  //connect my phone wifi's IP
 //IPAddress PGIP(192,168,0,102);  //connect my room wifi's I 
+IPAddress PGIP;
 const char user[] = "postgres";       // your database user
 const char password[] = "Anjapan12";   // your database password
 const char dbname[] = "postgres";         // your database name
@@ -132,7 +133,7 @@ int pg_status = 0;
 //millis================================
 //Set every 60 sec read DHT
 unsigned long previousMillis = 0;  // variable to store the last time the task was run
-const long interval = 60000 ; //1 min  = 60000       // time interval in milliseconds (eg 1000ms = 1 second)
+const long interval = 60000*15 ; //1 min  = 60000       // time interval in milliseconds (eg 1000ms = 1 second)
 //======================================
 
 void setup() {
@@ -167,6 +168,24 @@ void setup() {
   Serial.println(WiFi.SSID());              // 告訴我們是哪一組ssid連線到
   Serial.print("IP address:");
   Serial.println(WiFi.localIP());           // 送出ESP8266連線到IP多少
+
+  // ✅ 在 WiFi 連線成功之後才呼叫 WiFi.SSID()
+  String currentSSID = WiFi.SSID();
+  if (currentSSID == "CAECE611 2G") {
+    PGIP = IPAddress(192, 168, 0, 45);
+  } else if (currentSSID == "RLab_2.4G") {
+    PGIP = IPAddress(192, 168, 50, 35);
+  } else if (currentSSID == "jie") {
+    PGIP = IPAddress(10, 138, 177, 129);
+  } else if (currentSSID == "i_want_to_go_home") {
+    PGIP = IPAddress(192, 168, 0, 102);
+  } else {
+    Serial.println("Unknown WiFi. Using default PGIP.");
+    PGIP = IPAddress(192, 168, 0, 45);
+  }
+  Serial.print("Selected PGIP: ");
+  Serial.println(PGIP);
+
 
   Serial.println("Timer set to 60 seconds (timerDelay variable), it will take 60 seconds before publishing the first reading.");
 
@@ -212,6 +231,12 @@ void doPg(void)
   }
   
   if (pg_status == 2 && strlen(inbuf) > 0) {
+    if (conn.status() != CONNECTION_OK) {
+      Serial.println("PG not connected. Skipping execute.");
+      pg_status = -1;
+      return;
+    }
+
     if (conn.execute(inbuf)) goto error;
     Serial.println("Working...");
     pg_status = 3;
