@@ -244,7 +244,7 @@ st.markdown(
 
 st.title("🌱 604 戶外感測看板")
 
-fig, axs = plt.subplots(2, 3, figsize=(18, 12))
+fig, axs = plt.subplots(2, 3, figsize=(18, 10))
 
 # PM1.0
 axs[0, 0].plot(df_outdoor["time"], df_outdoor["pm1_0_atm"], marker='o', color='red')
