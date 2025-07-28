@@ -120,7 +120,7 @@ st.markdown(
 )
 
 st.title("🌱 604 空氣品質感測看板")
-fig, axs = plt.subplots(3, 2, figsize=(16, 12))
+fig, axs = plt.subplots(3, 2, figsize=(24, 12))
 
 # CO2
 axs[0, 0].plot(df["time"], df["co2eq"], marker='o', color='green')
