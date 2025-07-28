@@ -152,6 +152,9 @@ axs[2,0].set_title("Light intensity")
 axs[2,0].set_ylabel("lux")
 axs[2,0].tick_params(axis='x', rotation=45)
 
+# Empty (可放置其他指標或隱藏)
+axs[2, 1].axis('off')
+
 plt.tight_layout()
 st.pyplot(fig)
 #=========================================================
