@@ -177,7 +177,7 @@ def load_co2_data():
     return df
 
 # ---------- 畫面與圖表 ----------
-st.title("🌿 CO₂ 濃度趨勢圖（來自 Supabase）")
+st.title("🌿 CO₂ 濃度趨勢圖")
 
 df = load_co2_data()
 
