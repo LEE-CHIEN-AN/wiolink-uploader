@@ -158,6 +158,7 @@ axs[2, 1].axis('off')
 plt.tight_layout()
 st.pyplot(fig)
 
+#================================================================
 # ---------- 資料抓取函式 ----------
 @st.cache_data(ttl=600)  # 每10分鐘更新一次
 def load_co2_data():
@@ -185,7 +186,6 @@ fig = px.line(
     data_frame=df,
     x="time",
     y="co2eq",
-    color="name",
     title="604 教室 CO₂ 濃度變化趨勢",
     labels={"co2eq": "CO₂ (ppm)", "time": "時間"},
     height=500
