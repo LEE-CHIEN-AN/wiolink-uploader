@@ -1,4 +1,4 @@
-import numpy as np
+Fimport numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
@@ -168,7 +168,6 @@ def load_co2_data():
     response = supabase.table("wiolink") \
         .select("time, name, co2eq") \
         .eq("name", "604_air_quality") \
-        .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
         .execute()
 
