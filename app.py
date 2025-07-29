@@ -157,6 +157,42 @@ axs[2, 1].axis('off')
 
 plt.tight_layout()
 st.pyplot(fig)
+
+# ---------- 資料抓取函式 ----------
+@st.cache_data(ttl=600)  # 每10分鐘更新一次
+def load_co2_data():
+    now = datetime.now(timezone(timedelta(hours=8)))
+    start_time = now - timedelta(days=2)
+
+    response = supabase.table("wiolink") \
+        .select("time, name, co2eq") \
+        .eq("name", "604_air_quality") \
+        .gte("time", start_time.isoformat()) \
+        .order("time", desc=False) \
+        .execute()
+
+    df = pd.DataFrame(response.data)
+    df["time"] = pd.to_datetime(df["time"])
+    df = df.dropna(subset=["co2eq"])
+    return df
+
+# ---------- 畫面與圖表 ----------
+st.title("🌿 CO₂ 濃度趨勢圖（來自 Supabase）")
+
+df = load_co2_data()
+
+fig = px.line(
+    data_frame=df,
+    x="time",
+    y="co2eq",
+    color="name",
+    title="604 教室 CO₂ 濃度變化趨勢",
+    labels={"co2eq": "CO₂ (ppm)", "time": "時間"},
+    height=500
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
 #=========================================================
 # ========== 資料抓取 ==========
 @st.cache_data(ttl=300)  # 每5分鐘更新
