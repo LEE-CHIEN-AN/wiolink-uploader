@@ -25,7 +25,7 @@ def load_data_604():
     response = supabase.table("wiolink") \
         .select("time, name, co2eq, celsius_degree, humidity, total_voc") \
         .eq("name", "604_air_quality") \
-        .gte("time", start_time.isoformat()) \
+        #.gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
         .execute()
   
