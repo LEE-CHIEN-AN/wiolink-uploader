@@ -62,6 +62,7 @@ st.title("🌱 604 空氣品質即時概況")
 # 取最後一筆資料
 latest = df.iloc[-1]
 latest_light = df_light.iloc[-1]
+st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 # 以 HTML + CSS 呈現卡片
 st.markdown(
@@ -222,6 +223,7 @@ st.title("🌱 604 戶外空氣品質即時概況")
 
 # 取最後一筆資料
 latest = df_outdoor.iloc[-1]
+st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 # 即時數據卡片呈現
 st.markdown(
@@ -348,6 +350,7 @@ df_407 = load_data_407()
 st.title("🌱 407 空氣品質即時概況")
 # 取最後一筆資料
 latest = df_407.iloc[-1]
+st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 # 以 HTML + CSS 呈現卡片
 st.markdown(
