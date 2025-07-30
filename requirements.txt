@@ -6,3 +6,4 @@ matplotlib
 plotly
 dask
 hvplot
+streamlit_autorefresh
