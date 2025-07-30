@@ -148,7 +148,7 @@ void setup() {
   SERIAL_OUTPUT.println("Serial start");
   if (sensor.init()) {
       SERIAL_OUTPUT.println("HM330X init failed!!");
-      while (1);
+      //while (1);
   }
 
   //For WiFi
@@ -272,6 +272,7 @@ void doPg(void)
       msg = conn.getMessage();
       if (msg) Serial.println(msg);
     }
+
     if (rc & PG_RSTAT_READY) {
       pg_status = 2;
       Serial.println("Waiting query");
