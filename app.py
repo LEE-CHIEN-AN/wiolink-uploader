@@ -8,6 +8,10 @@ from datetime import datetime, timedelta, timezone
 # 字型設定（針對 Windows 中文支援）
 import matplotlib
 import plotly.express as px
+
+from streamlit_autorefresh import st_autorefresh
+st_autorefresh(interval=60 * 1000, key="auto-refresh")  # 每分鐘自動刷新
+
 # ---------- Supabase 設定 ----------
 # Supabase 設定
 # === Supabase 設定（從 GitHub Secrets 環境變數取得） ===
