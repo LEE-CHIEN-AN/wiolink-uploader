@@ -2,7 +2,6 @@
 #include <ESP8266WiFiMulti.h>
 #include <WiFiClient.h>
 #include <SimplePgSQL.h>
-#include <Digital_Light_TSL2561.h>
 #include <Wire.h>
 #include <ESPSupabase.h>
 #include <ArduinoJson.h>
@@ -16,9 +15,8 @@
 #define DHTTYPE    DHT11     // DHT 22 (AM2302)
 //#define DHTTYPE    DHT21     // DHT 21 (AM2301)
 DHT dht(DHTPIN, DHTTYPE);
-//Setup for DHT======================================
 
-//setup for Laser PM2.5 Sensor ===========================
+//Setup for DHT Laser PM2.5======================================================
 #include <Seeed_HM330X.h>
 
 #ifdef  ARDUINO_SAMD_VARIANT_COMPLIANCE
@@ -84,20 +82,7 @@ HM330XErrorCode parse_result_value(uint8_t* data) {
     SERIAL_OUTPUT.println("");
     return NO_ERROR;
 }
-//Setup for Laser PM2.5 ===========================
-
-//定義感測器變數與初始化邏輯
-// current temperature & humidity, updated in loop()
-float t = -1.0;
-int h = -1;
-int lux = -1;
-int motion = -1;
-int mag_approach = -1;
-float dust = -1.0;
-int touch = -1;
-int pm1_0_atm = -1;
-int pm2_5_atm = -1;
-int pm10_atm = -1;
+//==================================================================
 
 
 //Setup for WIFI=====================================
@@ -130,26 +115,38 @@ char inbuf[128];
 int pg_status = 0;
 //Setup connection and Database=====================
 
+
+//定義感測器變數與初始化邏輯
+// current temperature & humidity, updated in loop()
+float t = -1.0;
+int h = -1;
+int pm1_0_atm = -1;
+int pm2_5_atm = -1;
+int pm10_atm = -1;
+
 //millis================================
 //Set every 60 sec read DHT
 unsigned long previousMillis = 0;  // variable to store the last time the task was run
-const long interval = 60000*15 ; //1 min  = 60000       // time interval in milliseconds (eg 1000ms = 1 second)
+const long interval = 60000 ; //1 min  = 60000       // time interval in milliseconds (eg 1000ms = 1 second)
+const long sleep = 60000*15;
 //======================================
 
+/*30s*/
 void setup() {
   pinMode(15, OUTPUT); //wio link power
   digitalWrite(15, HIGH);
 
-  Serial.begin(9600);
-  //For DHT sensor
-  dht.begin();
-  
-  //For Laser PM2.5
+  //laser PM2.5
+  SERIAL_OUTPUT.begin(115200);
+  delay(100);
   SERIAL_OUTPUT.println("Serial start");
   if (sensor.init()) {
       SERIAL_OUTPUT.println("HM330X init failed!!");
       //while (1);
   }
+
+  //For DHT sensor
+  dht.begin();
 
   //For WiFi
   //WiFi.config(local_IP, gateway, subnet); // 靜態 IP 設定 一定要在 WiFi.begin() 之前
@@ -191,8 +188,6 @@ void setup() {
 
   // Init Supabase
   supabase.begin(supabaseUrl, supabaseKey);
-
-  
 
 }
 
@@ -291,8 +286,6 @@ error:
 }
 
 void loop() {
-  delay(50);
-
   doPg();
   if (pg_status == -1) { //database 自動重連
     delay(1000);  // 等待一下，避免爆炸重連
@@ -306,6 +299,22 @@ void loop() {
     // Save the last time the task was run
     previousMillis = currentMillis;
     if (WiFi.status() == WL_CONNECTED) {
+      //read Laser PM2.5 -----------------------------
+      if (sensor.read_sensor_value(buf, 29)) {
+        SERIAL_OUTPUT.println("HM330X read result failed!!");
+      }
+      parse_result_value(buf);
+      parse_result(buf);
+      SERIAL_OUTPUT.println("");
+      delay(1000);
+      pm1_0_atm = ((uint16_t)buf[10] << 8) | buf[11];
+      pm2_5_atm = ((uint16_t)buf[12] << 8) | buf[13];
+      pm10_atm  = ((uint16_t)buf[14] << 8) | buf[15];
+      Serial.print("PM1.0_atm: "); Serial.println(pm1_0_atm);
+      Serial.print("PM2.5_atm: "); Serial.println(pm2_5_atm);
+      Serial.print("PM10_atm: "); Serial.println(pm10_atm);
+      //read Laser PM2.5 -----------------------------
+
       //read DHT-11---------------------------------------
       t = dht.readTemperature();
       h = dht.readHumidity();
@@ -317,21 +326,6 @@ void loop() {
       Serial.println(" C ");
       //read DHT-11---------------------------------------
 
-      //read Laser PM2.5 -----------------------------
-      if (sensor.read_sensor_value(buf, 29)) {
-          SERIAL_OUTPUT.println("HM330X read result failed!!");
-      }
-      parse_result_value(buf);
-      parse_result(buf);
-      SERIAL_OUTPUT.println("");
-      pm1_0_atm = ((uint16_t)buf[10] << 8) | buf[11];
-      pm2_5_atm = ((uint16_t)buf[12] << 8) | buf[13];
-      pm10_atm  = ((uint16_t)buf[14] << 8) | buf[15];
-      Serial.print("PM1.0_atm: "); Serial.println(pm1_0_atm);
-      Serial.print("PM2.5_atm: "); Serial.println(pm2_5_atm);
-      Serial.print("PM10_atm: "); Serial.println(pm10_atm);
-      //read Laser PM2.5 -----------------------------
-
       //Send data to PostgreSQL
       // Menggunakan sprintf untuk memformat string dengan nilai numerik
       // dan menyimpannya dalam inbuf
@@ -341,12 +335,22 @@ void loop() {
         snprintf(inbuf, sizeof(inbuf),
           "insert into sensor_arduino (name,temp,humidity,pm1_0_atm,pm2_5_atm,pm10_atm) "
           "values('pm2.5',%.2f,%d,%d,%d,%d)",
-          t, h, pm1_0_atm, pm2_5_atm, pm10_atm); // ← 修正後加入 touch
+          t, h, pm1_0_atm, pm2_5_atm, pm10_atm);
         Serial.print("Generated SQL: ");
         Serial.println(inbuf);
+
+        // ✅ 立即執行
+        if (conn.execute(inbuf)) {
+          Serial.println("PostgreSQL insert failed!");
+          char* errMsg = conn.getMessage();
+          if (errMsg) Serial.println(errMsg);
+        } else {
+          Serial.println("PostgreSQL insert executed.");
+          pg_status = 3;  // 讓 doPg() 接下來去抓結果
+        }
       }
 
-      
+
       // Supabase insert
       String jsonData = String("{") +
       "\"name\": \"pm2.5\"," +
@@ -363,7 +367,37 @@ void loop() {
       } else {
         Serial.print("Supabase: Failed to insert data. HTTP: ");
         Serial.println(res);
+
+        // Retry once after short delay
+        delay(30000); //1 min  = 60000  
+        Serial.println("Retrying to insert data to Supabase...");
+        res = supabase.insert("wiolink", jsonData, false);
+        if (res == 200 || res == 201) {
+          Serial.println("Supabase: Retry successful!");
+        } else {
+          Serial.print("Supabase: Retry failed. HTTP: ");
+          Serial.println(res);
+        }
+        
       }
+
+      // ============ 💡 Light Sleep 模式 ============
+      Serial.println("Entering light sleep...");
+      WiFi.disconnect();            // 關閉 Wi-Fi
+      WiFi.forceSleepBegin();       // 進入 light sleep
+      delay(sleep);              // interval 已定義為 15 分鐘（單位 ms）
+      WiFi.forceSleepWake();        // 喚醒 MCU
+      delay(100);                   // 等待硬體穩定
+      Serial.println("Woke up from light sleep.");
+
+      // 重新連 Wi-Fi
+      Serial.println("Reconnecting to Wi-Fi...");
+      while (wifiMulti.run() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+      }
+      Serial.println("Wi-Fi reconnected.");
+
     }
     else { // wifi 自動重連
       Serial.println("WiFi Disconnected");
@@ -372,6 +406,6 @@ void loop() {
       Serial.println("WiFi disconnected, trying to reconnect...");
       
     }
-    
   }
+  
 }
