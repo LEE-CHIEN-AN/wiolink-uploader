@@ -17,7 +17,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
 # ========== 資料抓取 ==========
-@st.cache_data(ttl=300)  # 每5分鐘更新
+@st.cache_data(ttl=60)  # 每1分鐘更新
 def load_data_604():
     now = datetime.now(timezone(timedelta(hours=8)))
     start_time = now - timedelta(hours=24)
@@ -33,7 +33,7 @@ def load_data_604():
     df["time"] = pd.to_datetime(df["time"])
     return df.dropna()
     
-@st.cache_data(ttl=300)  # 每5分鐘更新
+@st.cache_data(ttl=60)  # 每1分鐘更新
 def load_data_604light():
     now = datetime.now(timezone(timedelta(hours=8)))
     start_time = now - timedelta(hours=24)
@@ -160,7 +160,7 @@ st.pyplot(fig)
 
 #================================================================
 # ---------- 資料抓取函式 ----------
-@st.cache_data(ttl=600)  # 每10分鐘更新一次
+@st.cache_data(ttl=60)  # 每1分鐘更新一次
 def load_co2_data():
     now = datetime.now(timezone(timedelta(hours=8)))
     start_time = now - timedelta(days=2)
@@ -196,7 +196,7 @@ st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
 # ========== 資料抓取 ==========
-@st.cache_data(ttl=300)  # 每5分鐘更新
+@st.cache_data(ttl=60)  # 每1分鐘更新
 def load_data_outdoor():
     now = datetime.now(timezone(timedelta(hours=8)))
     start_time = now - timedelta(hours=24)
@@ -321,7 +321,7 @@ st.pyplot(fig)
 
 #===========================================
 # ========== 資料抓取 ==========
-@st.cache_data(ttl=300)  # 每5分鐘更新
+@st.cache_data(ttl=60)  # 每1分鐘更新
 def load_data_407():
     now = datetime.now(timezone(timedelta(hours=8)))
     start_time = now - timedelta(hours=24)
