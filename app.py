@@ -20,7 +20,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 @st.cache_data(ttl=300)  # 每5分鐘更新
 def load_data_604():
     now = datetime.now(timezone(timedelta(hours=8)))
-    start_time = now - timedelta(hours=12)
+    start_time = now - timedelta(hours=24)
 
     response = supabase.table("wiolink") \
         .select("time, name, co2eq, celsius_degree, humidity, total_voc") \
@@ -36,7 +36,7 @@ def load_data_604():
 @st.cache_data(ttl=300)  # 每5分鐘更新
 def load_data_604light():
     now = datetime.now(timezone(timedelta(hours=8)))
-    start_time = now - timedelta(hours=12)
+    start_time = now - timedelta(hours=24)
 
     response = supabase.table("wiolink") \
         .select("time, name, light_intensity") \
@@ -199,7 +199,7 @@ st.plotly_chart(fig, use_container_width=True)
 @st.cache_data(ttl=300)  # 每5分鐘更新
 def load_data_outdoor():
     now = datetime.now(timezone(timedelta(hours=8)))
-    start_time = now - timedelta(hours=12)
+    start_time = now - timedelta(hours=24)
 
     response = supabase.table("wiolink") \
         .select("time, name, celsius_degree, humidity, pm1_0_atm, pm2_5_atm,  pm10_atm") \
@@ -324,7 +324,7 @@ st.pyplot(fig)
 @st.cache_data(ttl=300)  # 每5分鐘更新
 def load_data_407():
     now = datetime.now(timezone(timedelta(hours=8)))
-    start_time = now - timedelta(hours=12)
+    start_time = now - timedelta(hours=24)
 
     response = supabase.table("wiolink") \
         .select("time, name, light_intensity, celsius_degree, humidity") \
