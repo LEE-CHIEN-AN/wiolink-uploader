@@ -198,6 +198,74 @@ fig = px.line(
 st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
+# 感測器名稱對應座標
+sensor_coord_map = {
+    "wiolink_window": [180, 0],
+    "wiolink_wall": [688, 215],
+    "wiolink_door": [500, 678],
+    "604_air_quality": [0, 305]
+}
+
+# 載入溫度資料（來自多個感測器）
+@st.cache_data(ttl=60)
+def load_temperature_map():
+    response = supabase.table("wiolink") \
+        .select("time, name, celsius_degree") \
+        .in_("name", list(sensor_coord_map.keys())) \
+        .gte("time", (datetime.now(timezone(timedelta(hours=8))) - timedelta(hours=24)).isoformat()) \
+        .order("time", desc=False).execute()
+    
+    df = pd.DataFrame(response.data)
+    df["time"] = pd.to_datetime(df["time"])
+    df = df.dropna(subset=["celsius_degree"])
+    df["x"] = df["name"].apply(lambda n: sensor_coord_map[n][0])
+    df["y"] = df["name"].apply(lambda n: sensor_coord_map[n][1])
+    df.rename(columns={"name": "sensor_name", "celsius_degree": "temperature"}, inplace=True)
+    return df
+
+df_tempmap = load_temperature_map()
+time_options = df_tempmap["time"].sort_values().unique()
+selected_time = st.selectbox("選擇時間", options=time_options)
+
+df_t = df_tempmap[df_tempmap["time"] == selected_time]
+points = df_t[["x", "y"]].to_numpy()
+temperatures = df_t["temperature"].to_numpy()
+
+grid_x, grid_y = np.meshgrid(np.linspace(0, 688, 200), np.linspace(0, 687, 200))
+
+def idw(x, y, points, values, power=2):
+    z = np.zeros_like(x)
+    for i in range(x.shape[0]):
+        for j in range(x.shape[1]):
+            dists = np.sqrt((points[:,0] - x[i,j])**2 + (points[:,1] - y[i,j])**2)
+            dists = np.where(dists==0, 1e-10, dists)
+            weights = 1 / dists**power
+            z[i,j] = np.sum(weights * values) / np.sum(weights)
+    return z
+
+grid_z = idw(grid_x, grid_y, points, temperatures)
+
+fig = go.Figure(data=go.Heatmap(
+    z=grid_z,
+    x=np.linspace(0, 688, 200),
+    y=np.linspace(0, 687, 200),
+    colorscale='RdBu_r',
+    colorbar=dict(title="Temp (°C)")
+))
+fig.update_layout(title=f"Temperature Heatmap - {selected_time}", xaxis_title="X (cm)", yaxis_title="Y (cm)")
+
+for i, row in df_t.iterrows():
+    fig.add_trace(go.Scatter(
+        x=[row["x"]],
+        y=[row["y"]],
+        mode="text",
+        text=[f'{row["temperature"]:.1f}°C'],
+        textposition="top right",
+        showlegend=False
+    ))
+
+st.title("🌡️ 604 教室溫度熱力圖")
+st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
 # ========== 資料抓取 ==========
