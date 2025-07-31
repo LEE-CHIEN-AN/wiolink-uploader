@@ -257,9 +257,7 @@ grid_z = idw(grid_x, grid_y, points, temperatures)
 
 # 色彩設定與繪圖
 cmap = plt.get_cmap('coolwarm')
-vmin = np.min(temperatures)
-vmax = np.max(temperatures)
-norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+norm = mcolors.Normalize(vmin=20, vmax=30)  # 固定 colorbar 區間為 20~30°C
 
 plt.figure(figsize=(8, 6))
 img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',
@@ -282,6 +280,7 @@ st.title("🌡️ 604 溫度熱力圖")
 # 找出資料時間（最晚時間）
 st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
 st.pyplot(plt)
+
 # 604 溫度熱力圖 END========================================
 
 #=========================================================
