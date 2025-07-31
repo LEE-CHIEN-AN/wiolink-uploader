@@ -202,9 +202,9 @@ st.plotly_chart(fig, use_container_width=True)
 import matplotlib.colors as mcolors
 # 感測器固定座標
 sensor_coord_map = {
-    "wiolink_window": [180, 0],
-    "wiolink_wall": [688, 215],
-    "wiolink_door": [500, 678],
+    "wiolink window": [180, 0],
+    "wiolink wall": [688, 215],
+    "wiolink door": [500, 678],
     "604_air_quality": [0, 305]
 }
 
