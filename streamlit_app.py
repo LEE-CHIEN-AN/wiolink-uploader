@@ -213,23 +213,38 @@ sensor_coord_map = {
 sensor_names = list(sensor_coord_map.keys())
 latest_data = []
 
-for name in sensor_names:
+for name in sensor_coord_map:
     res = supabase.table("wiolink") \
-        .select("time, name, celsius_degree,humidity") \
+        .select("time, name, celsius_degree") \
         .eq("name", name) \
         .order("time", desc=True) \
-        .limit(1) \
+        .limit(20) \
         .execute()
-    if res.data:
-        row = res.data[0]
-        latest_data.append({
-            "sensor_name": name,
-            "time": row["time"],
-            "temperature": row["celsius_degree"],
-            "humidity": row["humidity"],
-            "x": sensor_coord_map[name][0],
-            "y": sensor_coord_map[name][1]
-        })
+
+    # 避免找不到資料
+    if not res.data:
+        st.error(f"❌ 感測器 `{name}` 無資料，請確認 Supabase 是否有上傳紀錄")
+        st.stop()
+
+    # 找到第一筆有效數據
+    found = False
+    for row in res.data:
+        temp = row["celsius_degree"]
+        if temp is not None and not np.isnan(temp):
+            latest_data.append({
+                "sensor_name": name,
+                "time": row["time"],
+                "temperature": temp,
+                "x": sensor_coord_map[name][0],
+                "y": sensor_coord_map[name][1]
+            })
+            found = True
+            break
+
+    # 若沒找到有效值就報錯停止
+    if not found:
+        st.error(f"❌ 感測器 `{name}` 找不到有效溫度值（全部為 NaN）")
+        st.stop()
 
 # 組成 DataFrame
 df = pd.DataFrame(latest_data)
