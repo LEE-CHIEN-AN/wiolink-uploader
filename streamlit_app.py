@@ -215,7 +215,7 @@ latest_data = []
 
 for name in sensor_coord_map:
     res = supabase.table("wiolink") \
-        .select("time, name, celsius_degree") \
+        .select("time, name, celsius_degree,humidity") \
         .eq("name", name) \
         .order("time", desc=True) \
         .limit(20) \
@@ -235,6 +235,7 @@ for name in sensor_coord_map:
                 "sensor_name": name,
                 "time": row["time"],
                 "temperature": temp,
+                "humidity": row["humidity"],
                 "x": sensor_coord_map[name][0],
                 "y": sensor_coord_map[name][1]
             })
