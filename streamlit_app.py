@@ -256,7 +256,7 @@ def idw(x, y, points, values, power=2):
 grid_z = idw(grid_x, grid_y, points, temperatures)
 
 # 色彩設定與繪圖
-cmap = plt.get_cmap('seismic')
+cmap = plt.get_cmap('RdYlBu').reversed()
 norm = mcolors.Normalize(vmin=20, vmax=30)  # 固定 colorbar 區間為 20~30°C
 
 plt.figure(figsize=(8, 6))
