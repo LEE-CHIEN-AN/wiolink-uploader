@@ -199,7 +199,7 @@ fig = px.line(
 st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
-st.title("🌱 604 溫度熱力圖")
+# 604 溫度熱力圖========================================
 
 import matplotlib.colors as mcolors
 # 感測器固定座標
@@ -272,9 +272,13 @@ plt.xlabel("X (cm)")
 plt.ylabel("Y (cm)")
 plt.legend(loc='lower right')
 plt.tight_layout()
+
+
+# 顯示在 Streamlit
+st.title("🌡️ 604 溫度熱力圖")
+st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
 st.pyplot(plt)
-
-
+# 604 溫度熱力圖 END========================================
 
 #=========================================================
 # ========== 資料抓取 ==========
