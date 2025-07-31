@@ -265,7 +265,9 @@ img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',
 plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
 
 for i, row in df.iterrows():
-    plt.text(row["x"] + 5, row["y"] + 5, f"{row['temperature']:.0f}°C", color='black', fontsize=9, weight='bold')
+    label = f"{row['sensor_name']}\n{row['temperature']:.1f}°C"
+    plt.text(row["x"] + 5, row["y"] + 5, label,
+             color='black', fontsize=9, weight='bold')
 
 cbar = plt.colorbar(img, label='Temperature (°C)')
 cbar.set_ticks(np.arange(20, 31, 1))  # 每 1°C 一格
