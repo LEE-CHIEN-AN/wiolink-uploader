@@ -268,6 +268,7 @@ for i, row in df.iterrows():
     plt.text(row["x"] + 5, row["y"] + 5, f"{row['temperature']:.0f}°C", color='black', fontsize=9, weight='bold')
 
 cbar = plt.colorbar(img, label='Temperature (°C)')
+cbar.set_ticks(np.arange(20, 31, 1))  # 每 1°C 一格
 plt.title("Classroom Temperature Heatmap (IDW, with Sensor Labels)", pad=20)
 plt.xlabel("X (cm)")
 plt.ylabel("Y (cm)")
