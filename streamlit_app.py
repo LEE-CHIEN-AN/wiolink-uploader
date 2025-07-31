@@ -199,6 +199,8 @@ fig = px.line(
 st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
+st.title("🌱 604 溫度熱力圖")
+
 import matplotlib.colors as mcolors
 # 感測器固定座標
 sensor_coord_map = {
@@ -294,7 +296,7 @@ def load_data_outdoor():
 
 df_outdoor = load_data_outdoor()
 
-st.title("🌱 604 戶外空氣品質即時概況")
+st.title("🌱 6樓 戶外空氣品質即時概況")
 
 # 取最後一筆資料
 latest = df_outdoor.iloc[-1]
@@ -360,7 +362,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("🌱 604 戶外感測看板")
+st.title("🌱 6樓 戶外感測看板")
 
 fig, axs = plt.subplots(2, 3, figsize=(18, 10))
 
