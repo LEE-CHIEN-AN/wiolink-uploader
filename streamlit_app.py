@@ -250,7 +250,7 @@ for name in sensor_coord_map:
 # 組成 DataFrame
 df = pd.DataFrame(latest_data)
 df["time"] = pd.to_datetime(df["time"])
-latest_time = df["time"].max()
+latest_time = df["time"].min()
 
 # 建立座標與值陣列
 points = df[["x", "y"]].to_numpy()
