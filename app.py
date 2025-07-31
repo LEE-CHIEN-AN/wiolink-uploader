@@ -205,10 +205,6 @@ import numpy as np
 import plotly.graph_objects as go
 from supabase import create_client
 
-# Supabase 連線
-url = st.secrets["SUPABASE_URL"]
-key = st.secrets["SUPABASE_KEY"]
-supabase = create_client(url, key)
 
 # 感測器名稱與固定座標對應
 sensor_coord_map = {
@@ -227,19 +223,19 @@ def load_data():
 df = load_data()
 
 # 加入 x, y 座標
-df["x"] = df["sensor_name"].apply(lambda name: sensor_coord_map.get(name, [None, None])[0])
-df["y"] = df["sensor_name"].apply(lambda name: sensor_coord_map.get(name, [None, None])[1])
+df["x"] = df["name"].apply(lambda name: sensor_coord_map.get(name, [None, None])[0])
+df["y"] = df["name"].apply(lambda name: sensor_coord_map.get(name, [None, None])[1])
 
 # 時間處理
-df["timestamp"] = pd.to_datetime(df["timestamp"])
-df = df.dropna(subset=["x", "y", "temperature"])  # 避免座標或溫度缺失
+df["time"] = pd.to_datetime(df["time"])
+df = df.dropna(subset=["x", "y", "celsius_degree"])  # 避免座標或溫度缺失
 
 # 選擇時間點
-time_points = df["timestamp"].sort_values().unique()
+time_points = df["time"].sort_values().unique()
 selected_time = st.select_slider("選擇時間", options=time_points)
 
 # 篩選該時間的資料
-df_t = df[df["timestamp"] == selected_time]
+df_t = df[df["time"] == selected_time]
 points = df_t[["x", "y"]].to_numpy()
 temperatures = df_t["temperature"].to_numpy()
 
