@@ -270,7 +270,8 @@ plt.xlabel("X (cm)")
 plt.ylabel("Y (cm)")
 plt.legend(loc='lower right')
 plt.tight_layout()
-plt.show()
+st.pyplot(plt)
+
 
 
 #=========================================================
