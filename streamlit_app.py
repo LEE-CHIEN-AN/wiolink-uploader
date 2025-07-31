@@ -274,7 +274,7 @@ df["short_name"] = df["sensor_name"].apply(lambda x: sensor_short_name.get(x, x)
 
 for i, row in df.iterrows():
     label = f"{row['short_name']}\n{row['temperature']:.1f}°C"
-    plt.text(row["x"] + 5, row["y"] + 5, label,
+    plt.text(row["x"] -15, row["y"] + 5, label,
              color='black', fontsize=9, weight='bold')
 
 cbar = plt.colorbar(img, label='Temperature (°C)')
