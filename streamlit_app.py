@@ -264,8 +264,16 @@ img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',
                  cmap=cmap, norm=norm, aspect='auto')
 plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
 
+sensor_short_name = {
+    "wiolink window": "Window",
+    "wiolink door": "Door",
+    "wiolink wall": "Wall",
+    "604_air_quality": "iMac"
+}
+df["short_name"] = df["sensor_name"].apply(lambda x: sensor_short_name.get(x, x))
+
 for i, row in df.iterrows():
-    label = f"{row['sensor_name']}\n{row['temperature']:.1f}°C"
+    label = f"{row['short_name']}\n{row['temperature']:.1f}°C"
     plt.text(row["x"] + 5, row["y"] + 5, label,
              color='black', fontsize=9, weight='bold')
 
