@@ -276,8 +276,7 @@ cmap = plt.get_cmap('RdYlBu').reversed()
 norm = mcolors.Normalize(vmin=20, vmax=30)  # 固定 colorbar 區間為 20~30°C
 
 plt.figure(figsize=(8, 6))
-img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',
-                 cmap=cmap, norm=norm, aspect='auto')
+img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',cmap=cmap, norm=norm, aspect='auto')
 plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
 
 sensor_short_name = {
