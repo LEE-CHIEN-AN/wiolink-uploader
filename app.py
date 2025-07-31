@@ -198,6 +198,62 @@ fig = px.line(
 st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
+# streamlit_app.py
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+from supabase import create_client
+
+# Supabase 設定
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_KEY"]
+supabase = create_client(url, key)
+
+@st.cache_data(ttl=300)
+def load_data():
+    response = supabase.table("wiolink").select("*").execute()
+    df = pd.DataFrame(response.data)
+    return df
+
+df = load_data()
+
+# 資料預處理
+df["timestamp"] = pd.to_datetime(df["timestamp"])
+all_times = df["timestamp"].sort_values().unique()
+
+selected_time = st.select_slider("選擇時間", options=all_times)
+
+df_t = df[df["timestamp"] == selected_time]
+points = df_t[["x", "y"]].to_numpy()
+temperatures = df_t["temperature"].to_numpy()
+
+# 建立網格 & 插值 (IDW)
+grid_x, grid_y = np.meshgrid(np.linspace(0, 688, 200), np.linspace(0, 687, 200))
+
+def idw(x, y, points, values, power=2):
+    z = np.zeros_like(x)
+    for i in range(x.shape[0]):
+        for j in range(x.shape[1]):
+            dists = np.sqrt((points[:,0] - x[i,j])**2 + (points[:,1] - y[i,j])**2)
+            dists = np.where(dists==0, 1e-10, dists)
+            weights = 1 / dists**power
+            z[i,j] = np.sum(weights * values) / np.sum(weights)
+    return z
+
+grid_z = idw(grid_x, grid_y, points, temperatures)
+
+# 畫圖（Plotly）
+fig = go.Figure(data=go.Heatmap(
+    z=grid_z,
+    x=np.linspace(0, 688, 200),
+    y=np.linspace(0, 687, 200),
+    colorscale='RdBu_r',
+    colorbar=dict(title="Temp (°C)")
+))
+fig.update_layout(title=f"Temperature Heatmap - {selected_time}", xaxis_title="X (cm)", yaxis_title="Y (cm)")
+
+st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
 # ========== 資料抓取 ==========
@@ -219,7 +275,7 @@ def load_data_outdoor():
 
 df_outdoor = load_data_outdoor()
 
-st.title("🌱 604 戶外空氣品質即時概況")
+st.title("🌱 6樓 戶外空氣品質即時概況")
 
 # 取最後一筆資料
 latest = df_outdoor.iloc[-1]
@@ -285,7 +341,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("🌱 604 戶外感測看板")
+st.title("🌱 6樓 戶外感測看板")
 
 fig, axs = plt.subplots(2, 3, figsize=(18, 10))
 
