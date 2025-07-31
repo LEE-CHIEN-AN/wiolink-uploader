@@ -200,7 +200,6 @@ st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
 # 604 溫度熱力圖========================================
-
 import matplotlib.colors as mcolors
 # 感測器固定座標
 sensor_coord_map = {
@@ -234,6 +233,8 @@ for name in sensor_names:
 
 # 組成 DataFrame
 df = pd.DataFrame(latest_data)
+df["time"] = pd.to_datetime(df["time"])
+latest_time = df["time"].max()
 
 # 建立座標與值陣列
 points = df[["x", "y"]].to_numpy()
