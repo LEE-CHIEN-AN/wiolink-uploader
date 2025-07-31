@@ -205,10 +205,6 @@ import numpy as np
 import plotly.graph_objects as go
 from supabase import create_client
 
-# Supabase 設定
-url = st.secrets["SUPABASE_URL"]
-key = st.secrets["SUPABASE_KEY"]
-supabase = create_client(url, key)
 
 @st.cache_data(ttl=300)
 def load_data():
@@ -219,7 +215,7 @@ def load_data():
 df = load_data()
 
 # 資料預處理
-df["timestamp"] = pd.to_datetime(df["timestamp"])
+df["timestamp"] = pd.to_datetime(df["time"])
 all_times = df["timestamp"].sort_values().unique()
 
 selected_time = st.select_slider("選擇時間", options=all_times)
