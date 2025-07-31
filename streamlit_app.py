@@ -11,7 +11,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from streamlit_autorefresh import st_autorefresh
-st_autorefresh(interval=60 * 1000, key="auto-refresh")  # 每分鐘自動刷新
+st_autorefresh(interval=60 * 1000 *5, key="auto-refresh")  # 每5分鐘自動刷新
 
 # ---------- Supabase 設定 ----------
 # Supabase 設定
