@@ -276,6 +276,9 @@ plt.tight_layout()
 
 # 顯示在 Streamlit
 st.title("🌡️ 604 溫度熱力圖")
+# 找出資料時間（最晚時間）
+df["time"] = pd.to_datetime(df["time"])
+latest_time = df["time"].max()
 st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
 st.pyplot(plt)
 # 604 溫度熱力圖 END========================================
