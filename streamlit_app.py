@@ -218,7 +218,7 @@ for name in sensor_coord_map:
         .select("time, name, celsius_degree,humidity") \
         .eq("name", name) \
         .order("time", desc=True) \
-        .limit(20) \
+        .limit(100) \
         .execute()
 
     # 避免找不到資料
