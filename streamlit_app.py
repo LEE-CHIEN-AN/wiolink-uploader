@@ -307,7 +307,38 @@ st.title("🌡️ 604 溫度熱力圖")
 st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
 st.pyplot(plt)
 
-# 604 溫度熱力圖 END========================================
+#========================================================================================================
+
+plt.figure(figsize=(8, 6))
+humidity_values = df["humidity"].to_numpy()
+grid_z_humidity = idw(grid_x, grid_y, points, humidity_values)
+
+cmap = plt.get_cmap('jet').reversed()
+norm=mcolors.Normalize(vmin=0, vmax=100)
+
+img = plt.imshow(grid_z_humidity, extent=(0, 688, 0, 687), origin='lower', cmap=cmap, norm=norm, aspect='auto')
+plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
+
+for i, row in df.iterrows():
+    label = f"{row['short_name']}\n{row['humidity']}%"
+    plt.text(row["x"] - 15, row["y"] + 10, label,
+             color='black', fontsize=9, weight='bold')
+
+# 色彩設定與繪圖
+cbar = plt.colorbar(img, label='Humidity (%)')
+cbar.set_ticks(np.arange(0, 105, 5))
+plt.title("Classroom Humidity Heatmap (IDW, with Sensor Labels)", pad=20)
+plt.xlabel("X (cm)")
+plt.ylabel("Y (cm)")
+plt.legend(loc='lower right')
+plt.tight_layout()
+# 顯示在 Streamlit
+st.title("🌡️ 604 溼度熱力圖")
+# 找出資料時間（最晚時間）
+st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
+st.pyplot(plt)
+
+# 604 溫溼度熱力圖 END========================================
 
 #=========================================================
 # ========== 資料抓取 ==========
