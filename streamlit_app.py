@@ -199,7 +199,8 @@ fig = px.line(
 st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
-# 感測器名稱對應座標
+import matplotlib.colors as mcolors
+# 感測器固定座標
 sensor_coord_map = {
     "wiolink_window": [180, 0],
     "wiolink_wall": [688, 215],
@@ -207,31 +208,34 @@ sensor_coord_map = {
     "604_air_quality": [0, 305]
 }
 
-# 載入溫度資料（來自多個感測器）
-@st.cache_data(ttl=60)
-def load_temperature_map():
-    response = supabase.table("wiolink") \
+# 從 Supabase 抓取最新一筆各感測器溫度資料
+sensor_names = list(sensor_coord_map.keys())
+latest_data = []
+
+for name in sensor_names:
+    res = supabase.table("wiolink") \
         .select("time, name, celsius_degree") \
-        .in_("name", list(sensor_coord_map.keys())) \
-        .gte("time", (datetime.now(timezone(timedelta(hours=8))) - timedelta(hours=24)).isoformat()) \
-        .order("time", desc=False).execute()
-    
-    df = pd.DataFrame(response.data)
-    df["time"] = pd.to_datetime(df["time"])
-    df = df.dropna(subset=["celsius_degree"])
-    df["x"] = df["name"].apply(lambda n: sensor_coord_map[n][0])
-    df["y"] = df["name"].apply(lambda n: sensor_coord_map[n][1])
-    df.rename(columns={"name": "sensor_name", "celsius_degree": "temperature"}, inplace=True)
-    return df
+        .eq("name", name) \
+        .order("time", desc=True) \
+        .limit(1) \
+        .execute()
+    if res.data:
+        row = res.data[0]
+        latest_data.append({
+            "sensor_name": name,
+            "temperature": row["celsius_degree"],
+            "x": sensor_coord_map[name][0],
+            "y": sensor_coord_map[name][1]
+        })
 
-df_tempmap = load_temperature_map()
-time_options = df_tempmap["time"].sort_values().unique()
-selected_time = st.selectbox("選擇時間", options=time_options)
+# 組成 DataFrame
+df = pd.DataFrame(latest_data)
 
-df_t = df_tempmap[df_tempmap["time"] == selected_time]
-points = df_t[["x", "y"]].to_numpy()
-temperatures = df_t["temperature"].to_numpy()
+# 建立座標與值陣列
+points = df[["x", "y"]].to_numpy()
+temperatures = df["temperature"].to_numpy()
 
+# IDW 插值
 grid_x, grid_y = np.meshgrid(np.linspace(0, 688, 200), np.linspace(0, 687, 200))
 
 def idw(x, y, points, values, power=2):
@@ -246,27 +250,28 @@ def idw(x, y, points, values, power=2):
 
 grid_z = idw(grid_x, grid_y, points, temperatures)
 
-fig = go.Figure(data=go.Heatmap(
-    z=grid_z,
-    x=np.linspace(0, 688, 200),
-    y=np.linspace(0, 687, 200),
-    colorscale='RdBu_r',
-    colorbar=dict(title="Temp (°C)")
-))
-fig.update_layout(title=f"Temperature Heatmap - {selected_time}", xaxis_title="X (cm)", yaxis_title="Y (cm)")
+# 色彩設定與繪圖
+cmap = plt.get_cmap('coolwarm')
+vmin = np.min(temperatures)
+vmax = np.max(temperatures)
+norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
 
-for i, row in df_t.iterrows():
-    fig.add_trace(go.Scatter(
-        x=[row["x"]],
-        y=[row["y"]],
-        mode="text",
-        text=[f'{row["temperature"]:.1f}°C'],
-        textposition="top right",
-        showlegend=False
-    ))
+plt.figure(figsize=(8, 6))
+img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',
+                 cmap=cmap, norm=norm, aspect='auto')
+plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
 
-st.title("🌡️ 604 教室溫度熱力圖")
-st.plotly_chart(fig, use_container_width=True)
+for i, row in df.iterrows():
+    plt.text(row["x"] + 5, row["y"] + 5, f"{row['temperature']:.0f}°C", color='black', fontsize=9, weight='bold')
+
+cbar = plt.colorbar(img, label='Temperature (°C)')
+plt.title("Classroom Temperature Heatmap (IDW, with Sensor Labels)", pad=20)
+plt.xlabel("X (cm)")
+plt.ylabel("Y (cm)")
+plt.legend(loc='lower right')
+plt.tight_layout()
+plt.show()
+
 
 #=========================================================
 # ========== 資料抓取 ==========
