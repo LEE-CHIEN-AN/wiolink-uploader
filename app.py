@@ -198,13 +198,25 @@ fig = px.line(
 st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
-# streamlit_app.py
+# 溫度熱力圖
 import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from supabase import create_client
 
+# Supabase 連線
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_KEY"]
+supabase = create_client(url, key)
+
+# 感測器名稱與固定座標對應
+sensor_coord_map = {
+    "wiolink_window": [180, 0],
+    "wiolink_wall": [688, 215],
+    "wiolink_door": [500, 678],
+    "604_air_quality": [0, 305]
+}
 
 @st.cache_data(ttl=300)
 def load_data():
@@ -214,17 +226,24 @@ def load_data():
 
 df = load_data()
 
-# 資料預處理
-df["timestamp"] = pd.to_datetime(df["time"])
-all_times = df["timestamp"].sort_values().unique()
+# 加入 x, y 座標
+df["x"] = df["sensor_name"].apply(lambda name: sensor_coord_map.get(name, [None, None])[0])
+df["y"] = df["sensor_name"].apply(lambda name: sensor_coord_map.get(name, [None, None])[1])
 
-selected_time = st.select_slider("選擇時間", options=all_times)
+# 時間處理
+df["timestamp"] = pd.to_datetime(df["timestamp"])
+df = df.dropna(subset=["x", "y", "temperature"])  # 避免座標或溫度缺失
 
+# 選擇時間點
+time_points = df["timestamp"].sort_values().unique()
+selected_time = st.select_slider("選擇時間", options=time_points)
+
+# 篩選該時間的資料
 df_t = df[df["timestamp"] == selected_time]
 points = df_t[["x", "y"]].to_numpy()
 temperatures = df_t["temperature"].to_numpy()
 
-# 建立網格 & 插值 (IDW)
+# IDW 內插
 grid_x, grid_y = np.meshgrid(np.linspace(0, 688, 200), np.linspace(0, 687, 200))
 
 def idw(x, y, points, values, power=2):
@@ -239,7 +258,7 @@ def idw(x, y, points, values, power=2):
 
 grid_z = idw(grid_x, grid_y, points, temperatures)
 
-# 畫圖（Plotly）
+# 畫 Plotly 熱力圖
 fig = go.Figure(data=go.Heatmap(
     z=grid_z,
     x=np.linspace(0, 688, 200),
@@ -249,7 +268,19 @@ fig = go.Figure(data=go.Heatmap(
 ))
 fig.update_layout(title=f"Temperature Heatmap - {selected_time}", xaxis_title="X (cm)", yaxis_title="Y (cm)")
 
+# 顯示感測器標籤
+for i, row in df_t.iterrows():
+    fig.add_trace(go.Scatter(
+        x=[row["x"]],
+        y=[row["y"]],
+        mode="text",
+        text=[f'{row["temperature"]:.1f}°C'],
+        textposition="top right",
+        showlegend=False
+    ))
+
 st.plotly_chart(fig, use_container_width=True)
+
 
 #=========================================================
 # ========== 資料抓取 ==========
