@@ -7,4 +7,3 @@ plotly
 dask
 hvplot
 streamlit_autorefresh
-supabase-py
