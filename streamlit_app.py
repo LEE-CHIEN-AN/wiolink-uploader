@@ -169,7 +169,7 @@ st.pyplot(fig)
 @st.cache_data(ttl=60)  # 每1分鐘更新一次
 def load_co2_data():
     now = datetime.now(timezone(timedelta(hours=8)))
-    start_time = now - timedelta(days=2)
+    start_time = now - timedelta(days=7)
 
     response = supabase.table("wiolink") \
         .select("time, name, co2eq,total_voc") \
