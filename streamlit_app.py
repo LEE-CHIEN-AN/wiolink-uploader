@@ -172,7 +172,7 @@ def load_co2_data():
     start_time = now - timedelta(days=2)
 
     response = supabase.table("wiolink") \
-        .select("time, name, co2eq") \
+        .select("time, name, co2eq,total_voc") \
         .eq("name", "604_air_quality") \
         .order("time", desc=False) \
         .execute()
@@ -193,6 +193,17 @@ fig = px.line(
     y="co2eq",
     title="604 教室 CO₂ 濃度變化趨勢",
     labels={"co2eq": "CO₂ (ppm)", "time": "時間"},
+    height=500
+)
+
+st.plotly_chart(fig, use_container_width=True)
+#--------------------------------------------
+fig = px.line(
+    data_frame=df,
+    x="time",
+    y="total_voc",
+    title="604 教室 VOC 濃度變化趨勢",
+    labels={"total_voc": "VOC (ppm)", "time": "時間"},
     height=500
 )
 
