@@ -258,7 +258,64 @@ fig = px.line(
 )
 
 st.plotly_chart(fig, use_container_width=True)
+#=======================================================
+# ---------- 使用者選單 ----------
+st.selectbox("請選擇資料時間範圍：", ["近 7 天", "近 30 天", "全部"], key="time_range")
 
+# ---------- 資料下載 ----------
+@st.cache_data(ttl=300)
+def load_supabase_data(name="wiolink door", max_rows=10000):
+    """分批下載資料並回傳 DataFrame"""
+    batch_size = 1000
+    all_data = []
+
+    for i in range(0, max_rows, batch_size):
+        response = supabase.table("wiolink") \
+            .select("time, name, humidity, celsius_degree, light_intensity") \
+            .eq("name", name) \
+            .order("time", desc=False) \
+            .range(i, i + batch_size - 1) \
+            .execute()
+
+        if not response.data:
+            break  # 沒資料了就跳出
+        all_data.extend(response.data)
+
+    df = pd.DataFrame(all_data)
+    df["time"] = pd.to_datetime(df["time"])
+    df = df.dropna(subset=["celsius_degree"])
+    return df
+
+df = load_supabase_data()
+
+# ---------- 篩選時間範圍 ----------
+now = datetime.now(timezone(timedelta(hours=8)))
+if st.session_state.time_range == "近 7 天":
+    start_time = now - timedelta(days=7)
+elif st.session_state.time_range == "近 30 天":
+    start_time = now - timedelta(days=30)
+else:
+    start_time = df["time"].min()
+
+df_filtered = df[df["time"] >= start_time]
+
+# ---------- 畫圖 ----------
+fig = px.line(
+    df_filtered,
+    x="time",
+    y="celsius_degree",
+    title=f"604 教室溫度變化趨勢（{st.session_state.time_range}）",
+    labels={"celsius_degree": "celsius degree", "time": "時間"},
+    height=500
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
+# ---------- 顯示最新一筆資料時間 ----------
+if not df_filtered.empty:
+    latest_time = df_filtered["time"].max().strftime("%Y-%m-%d %H:%M")
+    st.caption(f"📌 資料截至時間：{latest_time}")
+    
 #=========================================================
 # 604 溫度熱力圖========================================
 import matplotlib.colors as mcolors
