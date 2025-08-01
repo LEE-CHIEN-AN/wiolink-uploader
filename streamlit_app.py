@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import streamlit as st
 import os
-from supabase import create_client
+from supabase import create_client, Client
 from datetime import datetime, timedelta, timezone
 # 字型設定（針對 Windows 中文支援）
 import matplotlib
@@ -259,6 +259,8 @@ fig = px.line(
 
 st.plotly_chart(fig, use_container_width=True)
 #=======================================================
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ---------- 使用者選單 ----------
 st.selectbox("請選擇資料時間範圍：", ["近 7 天", "近 30 天", "全部"], key="time_range")
