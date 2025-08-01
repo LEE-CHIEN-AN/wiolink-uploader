@@ -164,6 +164,146 @@ axs[2, 1].axis('off')
 plt.tight_layout()
 st.pyplot(fig)
 
+# 604 溫度熱力圖========================================
+import matplotlib.colors as mcolors
+# 感測器固定座標
+sensor_coord_map = {
+    "wiolink window": [180, 0],
+    "wiolink wall": [688, 215],
+    "wiolink door": [500, 678],
+    "604_air_quality": [0, 305]
+}
+
+# 從 Supabase 抓取最新一筆各感測器溫度資料
+sensor_names = list(sensor_coord_map.keys())
+latest_data = []
+
+for name in sensor_coord_map:
+    res = supabase.table("wiolink") \
+        .select("time, name, celsius_degree,humidity") \
+        .eq("name", name) \
+        .order("time", desc=True) \
+        .limit(100) \
+        .execute()
+
+    # 避免找不到資料
+    if not res.data:
+        st.error(f"❌ 感測器 `{name}` 無資料，請確認 Supabase 是否有上傳紀錄")
+        st.stop()
+
+    # 找到第一筆有效數據
+    found = False
+    for row in res.data:
+        temp = row["celsius_degree"]
+        if temp is not None and not np.isnan(temp):
+            latest_data.append({
+                "sensor_name": name,
+                "time": row["time"],
+                "temperature": temp,
+                "humidity": row["humidity"],
+                "x": sensor_coord_map[name][0],
+                "y": sensor_coord_map[name][1]
+            })
+            found = True
+            break
+
+    # 若沒找到有效值就報錯停止
+    if not found:
+        st.error(f"❌ 感測器 `{name}` 找不到有效溫度值（全部為 NaN）")
+        st.stop()
+
+# 組成 DataFrame
+df = pd.DataFrame(latest_data)
+df["time"] = pd.to_datetime(df["time"])
+latest_time = df["time"].min()
+
+# 建立座標與值陣列
+points = df[["x", "y"]].to_numpy()
+temperatures = df["temperature"].to_numpy()
+
+# IDW 插值
+grid_x, grid_y = np.meshgrid(np.linspace(0, 688, 200), np.linspace(0, 687, 200))
+
+def idw(x, y, points, values, power=2):
+    z = np.zeros_like(x)
+    for i in range(x.shape[0]):
+        for j in range(x.shape[1]):
+            dists = np.sqrt((points[:,0] - x[i,j])**2 + (points[:,1] - y[i,j])**2)
+            dists = np.where(dists==0, 1e-10, dists)
+            weights = 1 / dists**power
+            z[i,j] = np.sum(weights * values) / np.sum(weights)
+    return z
+
+grid_z = idw(grid_x, grid_y, points, temperatures)
+
+# 色彩設定與繪圖
+cmap = plt.get_cmap('RdYlBu').reversed()
+norm = mcolors.Normalize(vmin=20, vmax=30)  # 固定 colorbar 區間為 20~30°C
+
+plt.figure(figsize=(8, 6))
+img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',cmap=cmap, norm=norm, aspect='auto')
+plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
+
+sensor_short_name = {
+    "wiolink window": "Window",
+    "wiolink door": "Door",
+    "wiolink wall": "Wall",
+    "604_air_quality": "iMac"
+}
+df["short_name"] = df["sensor_name"].apply(lambda x: sensor_short_name.get(x, x))
+
+for i, row in df.iterrows():
+    label = f"{row['short_name']}\n{row['temperature']:.1f}°C"
+    plt.text(row["x"] -15, row["y"] + 10, label,
+             color='black', fontsize=9, weight='bold')
+
+cbar = plt.colorbar(img, label='Temperature (°C)')
+cbar.set_ticks(np.arange(20, 31, 1))  # 每 1°C 一格
+plt.title("Classroom Temperature Heatmap (IDW, with Sensor Labels)", pad=20)
+plt.xlabel("X (cm)")
+plt.ylabel("Y (cm)")
+plt.legend(loc='lower right')
+plt.tight_layout()
+
+
+# 顯示在 Streamlit
+st.title("🌡️ 604 溫度熱力圖")
+# 找出資料時間（最晚時間）
+st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
+st.pyplot(plt)
+
+#========================================================================================================
+
+plt.figure(figsize=(8, 6))
+humidity_values = df["humidity"].to_numpy()
+grid_z_humidity = idw(grid_x, grid_y, points, humidity_values)
+
+cmap = plt.get_cmap('jet').reversed()
+norm=mcolors.Normalize(vmin=0, vmax=100)
+
+img = plt.imshow(grid_z_humidity, extent=(0, 688, 0, 687), origin='lower', cmap=cmap, norm=norm, aspect='auto')
+plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
+
+for i, row in df.iterrows():
+    label = f"{row['short_name']}\n{row['humidity']}%"
+    plt.text(row["x"] - 15, row["y"] + 10, label,
+             color='black', fontsize=9, weight='bold')
+
+# 色彩設定與繪圖
+cbar = plt.colorbar(img, label='Humidity (%)')
+cbar.set_ticks(np.arange(0, 105, 5))
+plt.title("Classroom Humidity Heatmap (IDW, with Sensor Labels)", pad=20)
+plt.xlabel("X (cm)")
+plt.ylabel("Y (cm)")
+plt.legend(loc='lower right')
+plt.tight_layout()
+# 顯示在 Streamlit
+st.title("🌡️ 604 溼度熱力圖")
+# 找出資料時間（最晚時間）
+st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
+st.pyplot(plt)
+
+# 604 溫溼度熱力圖 END========================================
 #================================================================
 # ---------- 資料抓取函式 ----------
 @st.cache_data(ttl=60)  # 每1分鐘更新一次
@@ -318,146 +458,7 @@ if not df_filtered.empty:
     st.caption(f"📌 資料截至時間：{latest_time}")
     
 #=========================================================
-# 604 溫度熱力圖========================================
-import matplotlib.colors as mcolors
-# 感測器固定座標
-sensor_coord_map = {
-    "wiolink window": [180, 0],
-    "wiolink wall": [688, 215],
-    "wiolink door": [500, 678],
-    "604_air_quality": [0, 305]
-}
 
-# 從 Supabase 抓取最新一筆各感測器溫度資料
-sensor_names = list(sensor_coord_map.keys())
-latest_data = []
-
-for name in sensor_coord_map:
-    res = supabase.table("wiolink") \
-        .select("time, name, celsius_degree,humidity") \
-        .eq("name", name) \
-        .order("time", desc=True) \
-        .limit(100) \
-        .execute()
-
-    # 避免找不到資料
-    if not res.data:
-        st.error(f"❌ 感測器 `{name}` 無資料，請確認 Supabase 是否有上傳紀錄")
-        st.stop()
-
-    # 找到第一筆有效數據
-    found = False
-    for row in res.data:
-        temp = row["celsius_degree"]
-        if temp is not None and not np.isnan(temp):
-            latest_data.append({
-                "sensor_name": name,
-                "time": row["time"],
-                "temperature": temp,
-                "humidity": row["humidity"],
-                "x": sensor_coord_map[name][0],
-                "y": sensor_coord_map[name][1]
-            })
-            found = True
-            break
-
-    # 若沒找到有效值就報錯停止
-    if not found:
-        st.error(f"❌ 感測器 `{name}` 找不到有效溫度值（全部為 NaN）")
-        st.stop()
-
-# 組成 DataFrame
-df = pd.DataFrame(latest_data)
-df["time"] = pd.to_datetime(df["time"])
-latest_time = df["time"].min()
-
-# 建立座標與值陣列
-points = df[["x", "y"]].to_numpy()
-temperatures = df["temperature"].to_numpy()
-
-# IDW 插值
-grid_x, grid_y = np.meshgrid(np.linspace(0, 688, 200), np.linspace(0, 687, 200))
-
-def idw(x, y, points, values, power=2):
-    z = np.zeros_like(x)
-    for i in range(x.shape[0]):
-        for j in range(x.shape[1]):
-            dists = np.sqrt((points[:,0] - x[i,j])**2 + (points[:,1] - y[i,j])**2)
-            dists = np.where(dists==0, 1e-10, dists)
-            weights = 1 / dists**power
-            z[i,j] = np.sum(weights * values) / np.sum(weights)
-    return z
-
-grid_z = idw(grid_x, grid_y, points, temperatures)
-
-# 色彩設定與繪圖
-cmap = plt.get_cmap('RdYlBu').reversed()
-norm = mcolors.Normalize(vmin=20, vmax=30)  # 固定 colorbar 區間為 20~30°C
-
-plt.figure(figsize=(8, 6))
-img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',cmap=cmap, norm=norm, aspect='auto')
-plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
-
-sensor_short_name = {
-    "wiolink window": "Window",
-    "wiolink door": "Door",
-    "wiolink wall": "Wall",
-    "604_air_quality": "iMac"
-}
-df["short_name"] = df["sensor_name"].apply(lambda x: sensor_short_name.get(x, x))
-
-for i, row in df.iterrows():
-    label = f"{row['short_name']}\n{row['temperature']:.1f}°C"
-    plt.text(row["x"] -15, row["y"] + 10, label,
-             color='black', fontsize=9, weight='bold')
-
-cbar = plt.colorbar(img, label='Temperature (°C)')
-cbar.set_ticks(np.arange(20, 31, 1))  # 每 1°C 一格
-plt.title("Classroom Temperature Heatmap (IDW, with Sensor Labels)", pad=20)
-plt.xlabel("X (cm)")
-plt.ylabel("Y (cm)")
-plt.legend(loc='lower right')
-plt.tight_layout()
-
-
-# 顯示在 Streamlit
-st.title("🌡️ 604 溫度熱力圖")
-# 找出資料時間（最晚時間）
-st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
-st.pyplot(plt)
-
-#========================================================================================================
-
-plt.figure(figsize=(8, 6))
-humidity_values = df["humidity"].to_numpy()
-grid_z_humidity = idw(grid_x, grid_y, points, humidity_values)
-
-cmap = plt.get_cmap('jet').reversed()
-norm=mcolors.Normalize(vmin=0, vmax=100)
-
-img = plt.imshow(grid_z_humidity, extent=(0, 688, 0, 687), origin='lower', cmap=cmap, norm=norm, aspect='auto')
-plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
-
-for i, row in df.iterrows():
-    label = f"{row['short_name']}\n{row['humidity']}%"
-    plt.text(row["x"] - 15, row["y"] + 10, label,
-             color='black', fontsize=9, weight='bold')
-
-# 色彩設定與繪圖
-cbar = plt.colorbar(img, label='Humidity (%)')
-cbar.set_ticks(np.arange(0, 105, 5))
-plt.title("Classroom Humidity Heatmap (IDW, with Sensor Labels)", pad=20)
-plt.xlabel("X (cm)")
-plt.ylabel("Y (cm)")
-plt.legend(loc='lower right')
-plt.tight_layout()
-# 顯示在 Streamlit
-st.title("🌡️ 604 溼度熱力圖")
-# 找出資料時間（最晚時間）
-st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
-st.pyplot(plt)
-
-# 604 溫溼度熱力圖 END========================================
 
 #=========================================================
 # ========== 資料抓取 ==========
