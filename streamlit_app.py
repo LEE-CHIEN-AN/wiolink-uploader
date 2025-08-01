@@ -183,7 +183,7 @@ def load_co2_data():
     return df
 
 # ---------- 畫面與圖表 ----------
-st.title("🌿 CO₂ 濃度趨勢圖")
+st.title("🌿 604 氣體 濃度長期趨勢圖")
 
 df = load_co2_data()
 
@@ -203,7 +203,7 @@ fig = px.line(
     x="time",
     y="total_voc",
     title="604 教室 VOC 濃度變化趨勢",
-    labels={"total_voc": "VOC (ppm)", "time": "時間"},
+    labels={"total_voc": "VOC (ppb)", "time": "時間"},
     height=500
 )
 
