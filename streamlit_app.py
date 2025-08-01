@@ -218,7 +218,7 @@ def load_dht11_data():
 
     response = supabase.table("wiolink") \
         .select("time, name, humidity,celsius_degree,light_intensity") \
-        .eq("name", "wiolink door") \ #門的資料
+        .eq("name", "wiolink door") \
         .order("time", desc=False) \
         .execute()
 
