@@ -259,6 +259,7 @@ fig = px.line(
 
 st.plotly_chart(fig, use_container_width=True)
 #=======================================================
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ---------- 使用者選單 ----------
 st.selectbox("請選擇資料時間範圍：", ["近 7 天", "近 30 天", "全部"], key="time_range")
 
