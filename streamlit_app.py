@@ -210,6 +210,39 @@ fig = px.line(
 st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
+# ---------- 資料抓取函式 ----------
+@st.cache_data(ttl=60)  # 每1分鐘更新一次
+def load_dht11_data():
+    now = datetime.now(timezone(timedelta(hours=8)))
+    start_time = now - timedelta(days=2)
+
+    response = supabase.table("wiolink") \
+        .select("time, name, humidity,celsius_degree,light_intensity") \
+        .eq("name", "wiolink door") \ #門的資料
+        .order("time", desc=False) \
+        .execute()
+
+    df = pd.DataFrame(response.data)
+    df["time"] = pd.to_datetime(df["time"])
+    df = df.dropna(subset=["celsius_degree"])
+    return df
+
+# ---------- 畫面與圖表 ----------
+st.title("🌿 604 氣體 濃度長期趨勢圖")
+
+df = load_dht11_data()
+
+fig = px.line(
+    data_frame=df,
+    x="time",
+    y="celsius_degree",
+    title="604 教室 溫度 濃度變化趨勢",
+    labels={"celsius_degree": "celsius degree", "time": "時間"},
+    height=500
+)
+
+st.plotly_chart(fig, use_container_width=True)
+#=========================================================
 # 604 溫度熱力圖========================================
 import matplotlib.colors as mcolors
 # 感測器固定座標
