@@ -106,9 +106,9 @@ st.markdown(
     .yellow {{ background-color: #FFC107; color: black; }}
     .blue {{ background-color: #2196F3; }}
     .brown {{ background-color: #A52A2A;}}
-    .red { background-color: #e53935; }
-    .pink { background-color: #d81b60; }
-    .purple { background-color: #8e24aa; }
+    .red {{background-color: #e53935; }}
+    .pink {{ background-color: #d81b60; }}
+    .purple {{ background-color: #8e24aa; }}
     .value {{
         font-size: 32px;
         font-weight: bold;
