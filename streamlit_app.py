@@ -171,7 +171,8 @@ sensor_coord_map = {
     "wiolink window": [180, 0],
     "wiolink wall": [688, 215],
     "wiolink door": [500, 678],
-    "604_air_quality": [0, 305]
+    "604_air_quality": [0, 305],
+    "604_pm2.5" : [0,678]
 }
 
 # 從 Supabase 抓取最新一筆各感測器溫度資料
@@ -248,7 +249,8 @@ sensor_short_name = {
     "wiolink window": "Window",
     "wiolink door": "Door",
     "wiolink wall": "Wall",
-    "604_air_quality": "iMac"
+    "604_air_quality": "iMac",
+    "604_pm2.5" : "PM2.5"
 }
 df["short_name"] = df["sensor_name"].apply(lambda x: sensor_short_name.get(x, x))
 
