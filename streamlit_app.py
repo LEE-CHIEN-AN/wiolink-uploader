@@ -54,15 +54,32 @@ def load_data_604light():
     df["time"] = pd.to_datetime(df["time"])
     return df.dropna()
 
+@st.cache_data(ttl=60)  # 每1分鐘更新
+def load_data_604PM():
+    now = datetime.now(timezone(timedelta(hours=8)))
+    start_time = now - timedelta(hours=24)
+
+    response = supabase.table("wiolink") \
+        .select("time, name, pm1_0_atm,pm2_5_atm, pm10_atm") \
+        .eq("name", "604_pm2.5") \
+        .gte("time", start_time.isoformat()) \
+        .order("time", desc=False) \
+        .execute()
+
+    df = pd.DataFrame(response.data)
+    df["time"] = pd.to_datetime(df["time"])
+    return df.dropna()
 
 df = load_data_604()
 df_light  = load_data_604light()
+df_pm = load_data_604PM()
 # ========== 畫面與圖表 ==========
-st.title("🌱 604 空氣品質即時概況")
+st.title("🌱 604 空氣品質即時概況(at iMAC)")
 
 # 取最後一筆資料
 latest = df.iloc[-1]
 latest_light = df_light.iloc[-1]
+latest_pm = df_pm.iloc[-1]
 st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 # 以 HTML + CSS 呈現卡片
@@ -89,6 +106,9 @@ st.markdown(
     .yellow {{ background-color: #FFC107; color: black; }}
     .blue {{ background-color: #2196F3; }}
     .brown {{ background-color: #A52A2A;}}
+    .red { background-color: #e53935; }
+    .pink { background-color: #d81b60; }
+    .purple { background-color: #8e24aa; }
     .value {{
         font-size: 32px;
         font-weight: bold;
@@ -120,6 +140,19 @@ st.markdown(
             <div class="label">Light Intensity</div>
             <div class="value">{latest_light["light_intensity"]:.0f} lux</div>
         </div>
+        <div class="card red">
+            <div class="label">PM1.0</div>
+            <div class="value">{latest_pm["pm1_0_atm"]} μg/m³</div>
+        </div>
+        <div class="card pink">
+            <div class="label">PM2.5</div>
+            <div class="value">{latest_pm["pm2_5_atm"]} μg/m³</div>
+        </div>
+        <div class="card purple">
+            <div class="label">PM10</div>
+            <div class="value">{latest_pm["pm10_atm"]} μg/m³</div>
+        </div>
+
     </div>
     """,
     unsafe_allow_html=True
@@ -158,8 +191,12 @@ axs[2,0].set_title("Light intensity")
 axs[2,0].set_ylabel("lux")
 axs[2,0].tick_params(axis='x', rotation=45)
 
-# Empty (可放置其他指標或隱藏)
-axs[2, 1].axis('off')
+# PM2.5
+axs[2, 1].plot(df_pm["time"], df_pm["pm2_5_atm"], marker='o', color='pink')
+axs[2, 1].set_title("PM2.5")
+axs[2, 1].set_ylabel("μg/m³")
+axs[2, 1].tick_params(axis='x', rotation=45)
+
 
 plt.tight_layout()
 st.pyplot(fig)
