@@ -61,10 +61,11 @@ WiFiClient client;
 ESP8266WiFiMulti wifiMulti; // 建立一個ESP8266WiFiMulti類別的實體變數叫'wifiMulti'
 
 //Setup connection and Database=====================
-//IPAddress PGIP(192,168,0,45);   //connect 611 wifi's IP  // your PostgreSQL server IP
-IPAddress PGIP(192,168,50,35);  //connect rlab wifi's IP
+//IPAddress PGIP(192,168,0,45);   //connect 611、407 wifi's IP  // your PostgreSQL server IP
+//IPAddress PGIP(192,168,50,35);  //connect rlab wifi's IP
 //IPAddress PGIP(10,188,40,129);  //connect my phone wifi's IP
-//IPAddress PGIP(192,168,0,102);  //connect my room wifi's I 
+//IPAddress PGIP(192,168,0,102);  //connect my room wifi's IP
+IPAddress PGIP;
 const char user[] = "postgres";       // your database user
 const char password[] = "Anjapan12";   // your database password
 const char dbname[] = "postgres";         // your database name
@@ -89,14 +90,14 @@ int pg_status = 0;
 //millis================================
 //Set every 60 sec read DHT
 unsigned long previousMillis = 0;  // variable to store the last time the task was run
-const long interval = 60000 * 15 ; //1 min  = 600000       // time interval in milliseconds (eg 1000ms = 1 second)
+const long interval = 60000 * 5 ; //1 min  = 600000       // time interval in milliseconds (eg 1000ms = 1 second)
 //=====================================
 
 void setup() {
   pinMode(15, OUTPUT); //wio link power
   digitalWrite(15, HIGH);
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   //For DHT sensor
   dht.begin();
 
@@ -120,6 +121,7 @@ void setup() {
   wifiMulti.addAP("RLab_2.4G", "ntucerlab");
   wifiMulti.addAP("jie", "0926197320");
   wifiMulti.addAP("i_want_to_go_home", "33438542");
+  wifiMulti.addAP("TP-Link_CDF8_2.4G", "Room901901");
 
   Serial.println("Connecting");
   while (wifiMulti.run() != WL_CONNECTED) {//mulitWiFi
@@ -131,6 +133,25 @@ void setup() {
   Serial.println(WiFi.SSID());              // 告訴我們是哪一組ssid連線到
   Serial.print("IP address:");
   Serial.println(WiFi.localIP());           // 送出ESP8266連線到IP多少
+
+    // ✅ 在 WiFi 連線成功之後才呼叫 WiFi.SSID()
+  String currentSSID = WiFi.SSID();
+  if (currentSSID == "CAECE611 2G") {
+    PGIP = IPAddress(192, 168, 0, 45);
+  } else if (currentSSID == "TP-Link_CDF8_2.4G") {
+    PGIP = IPAddress(192, 168, 0, 45);
+  } else if (currentSSID == "RLab_2.4G") {
+    PGIP = IPAddress(192, 168, 50, 35);
+  } else if (currentSSID == "jie") {
+    PGIP = IPAddress(10, 138, 177, 129);
+  } else if (currentSSID == "i_want_to_go_home") {
+    PGIP = IPAddress(192, 168, 0, 102);
+  } else {
+    Serial.println("Unknown WiFi. Using default PGIP.");
+    PGIP = IPAddress(192, 168, 0, 45);
+  }
+  Serial.print("Selected PGIP: ");
+  Serial.println(PGIP);
 
   Serial.println("Timer set to 60 seconds (timerDelay variable), it will take 60 seconds before publishing the first reading.");
 
