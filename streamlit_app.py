@@ -159,7 +159,7 @@ st.markdown(
 )
 
 st.title("🌱 604 空氣品質感測看板")
-fig, axs = plt.subplots(3, 2, figsize=(18, 18))
+fig, axs = plt.subplots(4, 2, figsize=(18, 24))
 
 # CO2
 axs[0, 0].plot(df["time"], df["co2eq"], marker='o', color='green')
@@ -197,6 +197,17 @@ axs[2, 1].set_title("PM2.5")
 axs[2, 1].set_ylabel("μg/m³")
 axs[2, 1].tick_params(axis='x', rotation=45)
 
+# PM1.0
+axs[3, 0].plot(df_pm["time"], df_pm["pm1_0_atm"], marker='o', color='red')
+axs[3, 0].set_title("PM2.5")
+axs[3, 0].set_ylabel("μg/m³")
+axs[3, 0].tick_params(axis='x', rotation=45)
+
+# PM10
+axs[3, 1].plot(df_pm["time"], df_pm["pm10_atm"], marker='o', color='purple')
+axs[3, 1].set_title("PM2.5")
+axs[3, 1].set_ylabel("μg/m³")
+axs[3, 1].tick_params(axis='x', rotation=45)
 
 plt.tight_layout()
 st.pyplot(fig)
