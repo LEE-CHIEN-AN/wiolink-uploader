@@ -74,7 +74,7 @@ df = load_data_604()
 df_light  = load_data_604light()
 df_pm = load_data_604PM()
 # ========== 畫面與圖表 ==========
-st.title("🌱 604 空氣品質即時概況(at iMAC)")
+st.title("🌱 604 空氣品質即時概況")
 
 # 取最後一筆資料
 latest = df.iloc[-1]
