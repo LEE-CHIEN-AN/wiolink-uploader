@@ -159,7 +159,7 @@ st.markdown(
 )
 
 #=================================================
-TZ = timezone(timedelta(hours=8))  # 台灣時區 UTC+8
+
 
 # ========= 門檻 =========
 THRESHOLDS = {
@@ -171,18 +171,11 @@ THRESHOLDS = {
 
 WARN_RATIO = 0.8  # 警告比例
 
-def to_taiwan_tz(series):
-    s = pd.to_datetime(series)
-    if s.dt.tz is None:
-        s = s.dt.tz_localize("UTC")
-    return s.dt.tz_convert("Asia/Taipei")
-
 def latest_window_avg(df, col, hours, unit_conv=None):
     if df.empty:
         return None
 
     s = df.copy()
-    s["time"] = to_taiwan_tz(s["time"])
     s = s.sort_values("time")
 
     end = s["time"].iloc[-1]
@@ -228,7 +221,7 @@ badge(avg_pm10_24h, THRESHOLDS["pm10_ug_24h"], "PM10（24小時平均，μg/m³�
 
 # 顯示平均時間
 if not df.empty:
-    latest_time = to_taiwan_tz(df["time"]).iloc[-1]
+    latest_time = df["time"].iloc[-1]
     st.caption(f"📅 平均計算截至：{latest_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
 #==============================================================================
