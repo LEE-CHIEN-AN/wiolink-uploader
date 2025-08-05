@@ -159,31 +159,30 @@ st.markdown(
 )
 
 #=================================================
-TZ = timezone(timedelta(hours=8))
+TZ = timezone(timedelta(hours=8))  # 台灣時區 UTC+8
 
 # ========= 門檻 =========
 THRESHOLDS = {
-    "co2eq_ppm_8h": 1000,      # CO2 8h
-    "tvoc_ppm_1h": 0.56,       # TVOC 1h (注意單位換算)
-    "pm25_ug_24h": 35,         # PM2.5 24h
-    "pm10_ug_24h": 75,         # PM10 24h
+    "co2eq_ppm_8h": 1000,
+    "tvoc_ppm_1h": 0.56,
+    "pm25_ug_24h": 35,
+    "pm10_ug_24h": 75,
 }
 
-# 近乎超標的提醒比例
-WARN_RATIO = 0.8
+WARN_RATIO = 0.8  # 警告比例
+
+def to_taiwan_tz(series):
+    s = pd.to_datetime(series)
+    if s.dt.tz is None:
+        s = s.dt.tz_localize("UTC")
+    return s.dt.tz_convert("Asia/Taipei")
 
 def latest_window_avg(df, col, hours, unit_conv=None):
-    """
-    取 df 中 col 欄位在「最新時間往回 hours 小時」的平均。
-    df 需包含 time 欄位（datetime64[ns, tz] 或可轉換），且升冪排序。
-    unit_conv: 可選單位換算的函式，例如 lambda s: s / 1000
-    """
     if df.empty:
         return None
 
-    # 確保時間為 tz-aware、升冪排序
     s = df.copy()
-    s["time"] = pd.to_datetime(s["time"]).dt.tz_convert(TZ) if pd.to_datetime(s["time"]).dt.tz is not None else pd.to_datetime(s["time"]).dt.tz_localize(TZ)
+    s["time"] = to_taiwan_tz(s["time"])
     s = s.sort_values("time")
 
     end = s["time"].iloc[-1]
@@ -199,9 +198,7 @@ def latest_window_avg(df, col, hours, unit_conv=None):
 
     return float(window.mean())
 
-
 def badge(value, limit, label, unit):
-    """回傳 Streamlit 的警示方塊：安全/接近/超標"""
     if value is None:
         st.info(f"{label}：近 {unit} 無足夠資料。")
         return
@@ -213,34 +210,26 @@ def badge(value, limit, label, unit):
     else:
         st.success(f"✅ {label} 正常：{value:.2f}（標準 {limit}）")
 
-
-# ========= 與你現有 df 接軌 =========
 # 假設：
-# df         : 604_air_quality（含 time, co2eq, total_voc 等）
-# df_pm   : 604_pm2.5（含 time, pm2_5_atm）
-# df_pm    : 604_pm2.5（同表也有 pm10_atm；若你分表，請改變名稱）
+# df     : 604_air_quality（含 co2eq、total_voc）
+# df_pm  : 604_pm2.5（含 pm2_5_atm、pm10_atm）
 
-# 1) CO2（8h 平均）
 avg_co2_8h = latest_window_avg(df, "co2eq", hours=8)
 badge(avg_co2_8h, THRESHOLDS["co2eq_ppm_8h"], "CO₂（8小時平均，ppm）", "8 小時")
 
-# 2) TVOC（1h 平均，ppb→ppm）
-avg_tvoc_1h = latest_window_avg(df, "total_voc", hours=1, unit_conv=lambda s: s/1000.0)
+avg_tvoc_1h = latest_window_avg(df, "total_voc", hours=1, unit_conv=lambda s: s / 1000.0)
 badge(avg_tvoc_1h, THRESHOLDS["tvoc_ppm_1h"], "TVOC（1小時平均，ppm）", "1 小時")
 
-# 3) PM2.5（24h 平均）
 avg_pm25_24h = latest_window_avg(df_pm, "pm2_5_atm", hours=24)
 badge(avg_pm25_24h, THRESHOLDS["pm25_ug_24h"], "PM2.5（24小時平均，μg/m³）", "24 小時")
 
-# 4) PM10（24h 平均）
 avg_pm10_24h = latest_window_avg(df_pm, "pm10_atm", hours=24)
 badge(avg_pm10_24h, THRESHOLDS["pm10_ug_24h"], "PM10（24小時平均，μg/m³）", "24 小時")
 
-# （可選）在頁面上也顯示最新時間點，讓使用者知道平均是到什麼時刻
+# 顯示平均時間
 if not df.empty:
-    latest_time = pd.to_datetime(df["time"].iloc[-1])
-    latest_time = latest_time.tz_convert(TZ) if latest_time.tzinfo else latest_time.tz_localize(TZ)
-    st.caption(f"平均計算截至：{latest_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    latest_time = to_taiwan_tz(df["time"]).iloc[-1]
+    st.caption(f"📅 平均計算截至：{latest_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
 #==============================================================================
 st.title("🌱 604 空氣品質感測看板")
