@@ -217,8 +217,8 @@ def badge(value, limit, label, unit):
 # ========= 與你現有 df 接軌 =========
 # 假設：
 # df         : 604_air_quality（含 time, co2eq, total_voc 等）
-# df_pm2_5   : 604_pm2.5（含 time, pm2_5_atm）
-# df_pm10    : 604_pm2.5（同表也有 pm10_atm；若你分表，請改變名稱）
+# df_pm   : 604_pm2.5（含 time, pm2_5_atm）
+# df_pm    : 604_pm2.5（同表也有 pm10_atm；若你分表，請改變名稱）
 
 # 1) CO2（8h 平均）
 avg_co2_8h = latest_window_avg(df, "co2eq", hours=8)
@@ -229,11 +229,11 @@ avg_tvoc_1h = latest_window_avg(df, "total_voc", hours=1, unit_conv=lambda s: s/
 badge(avg_tvoc_1h, THRESHOLDS["tvoc_ppm_1h"], "TVOC（1小時平均，ppm）", "1 小時")
 
 # 3) PM2.5（24h 平均）
-avg_pm25_24h = latest_window_avg(df_pm2_5, "pm2_5_atm", hours=24)
+avg_pm25_24h = latest_window_avg(df_pm, "pm2_5_atm", hours=24)
 badge(avg_pm25_24h, THRESHOLDS["pm25_ug_24h"], "PM2.5（24小時平均，μg/m³）", "24 小時")
 
 # 4) PM10（24h 平均）
-avg_pm10_24h = latest_window_avg(df_pm2_5, "pm10_atm", hours=24)
+avg_pm10_24h = latest_window_avg(df_pm, "pm10_atm", hours=24)
 badge(avg_pm10_24h, THRESHOLDS["pm10_ug_24h"], "PM10（24小時平均，μg/m³）", "24 小時")
 
 # （可選）在頁面上也顯示最新時間點，讓使用者知道平均是到什麼時刻
