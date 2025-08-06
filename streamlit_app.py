@@ -223,6 +223,84 @@ badge(avg_pm10_24h, THRESHOLDS["pm10_ug_24h"], "PM10（24小時平均，μg/m³�
 if not df.empty:
     latest_time = df["time"].iloc[-1]
     st.caption(f"📅 平均計算截至：{latest_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+#==================================================================================
+# ==================== IAQI 指數計算區塊 ====================
+
+# IAQI 分類表（來源：atmotube.com）
+IAQI_BREAKPOINTS = {
+    "co2eq": [
+        (400, 599, 81, 100),
+        (600, 999, 61, 80),
+        (1000, 1499, 41, 60),
+        (1500, 2499, 21, 40),
+        (2500, 4000, 0, 20),
+    ],
+    "total_voc": [
+        (0.0, 0.05, 81, 100),
+        (0.06, 0.1, 61, 80),
+        (0.11, 0.3, 41, 60),
+        (0.31, 0.75, 21, 40),
+        (0.76, 1.0, 0, 20),
+    ],
+    "pm2_5_atm": [
+        (0, 20, 81, 100),
+        (21, 50, 61, 80),
+        (51, 90, 41, 60),
+        (91, 140, 21, 40),
+        (141, 200, 0, 20),
+    ],
+    "pm10_atm": [
+        (0, 30, 81, 100),
+        (31, 75, 61, 80),
+        (76, 125, 41, 60),
+        (126, 200, 21, 40),
+        (201, 300, 0, 20),
+    ],
+}
+
+
+def calculate_iaqi(value, breakpoints):
+    """依據 IAQI 分段與公式計算單一項目的 IAQI"""
+    for bp_lo, bp_hi, i_lo, i_hi in breakpoints:
+        if bp_lo <= value <= bp_hi:
+            return (i_hi - i_lo) / (bp_hi - bp_lo) * (value - bp_lo) + i_lo
+    return None
+
+
+# 取得最新資料（ppb 轉 ppm）
+co2_val = df["co2eq"].iloc[-1]
+tvoc_val = df["total_voc"].iloc[-1] / 1000  # ppb → ppm
+pm25_val = df_pm["pm2_5_atm"].iloc[-1]
+pm10_val = df_pm["pm10_atm"].iloc[-1]
+
+# 各項 IAQI
+iaqi_co2 = calculate_iaqi(co2_val, IAQI_BREAKPOINTS["co2eq"])
+iaqi_tvoc = calculate_iaqi(tvoc_val, IAQI_BREAKPOINTS["total_voc"])
+iaqi_pm25 = calculate_iaqi(pm25_val, IAQI_BREAKPOINTS["pm2_5_atm"])
+iaqi_pm10 = calculate_iaqi(pm10_val, IAQI_BREAKPOINTS["pm10_atm"])
+
+# 最終 IAQI：取最小值（代表最差）
+iaqi_final = min(filter(None, [iaqi_co2, iaqi_tvoc, iaqi_pm25, iaqi_pm10]))
+
+# 分類文字
+def iaqi_label(score):
+    if score >= 81:
+        return "🟢 良好"
+    elif score >= 61:
+        return "🟢 普通"
+    elif score >= 41:
+        return "🟠 輕度污染"
+    elif score >= 21:
+        return "🔴 中度污染"
+    else:
+        return "🟥 嚴重污染"
+
+# 顯示 IAQI 結果
+st.subheader("🌈 室內空氣品質 IAQI 指數")
+st.markdown(f"""
+- **IAQI 分數：** {iaqi_final:.1f}
+- **等級分類：** {iaqi_label(iaqi_final)}
+""")
 
 #==============================================================================
 st.title("🌱 604 空氣品質感測看板")
