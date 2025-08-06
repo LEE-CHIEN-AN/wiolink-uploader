@@ -564,6 +564,14 @@ fig = px.line(
     labels={"co2eq": "CO₂ (ppm)", "time": "時間"},
     height=500
 )
+# 加上 1000 ppm 的警戒線
+fig.add_hline(
+    y=1000,
+    line_dash="dash",
+    line_color="red",
+    annotation_text="警戒值：1000 ppm",
+    annotation_position="top left"
+)
 
 st.plotly_chart(fig, use_container_width=True)
 #--------------------------------------------
@@ -576,57 +584,17 @@ fig = px.line(
     height=500
 )
 
-st.plotly_chart(fig, use_container_width=True)
-
-# 溫度長期趨勢圖=====
-# 🔁 下拉選單選擇時間範圍
-time_range = st.selectbox(
-    "請選擇資料時間範圍：",
-    options=["近 7 天", "近 30 天", "全部資料"]
-)
-
-# 🕒 根據選項設定時間區間
-def get_start_time(range_label):
-    now = datetime.now(timezone(timedelta(hours=8)))
-    if range_label == "近 7 天":
-        return now - timedelta(days=7)
-    elif range_label == "近 30 天":
-        return now - timedelta(days=30)
-    else:
-        return None  # 代表不限制時間
-
-# 📦 讀取資料
-@st.cache_data(ttl=60)
-def load_dht11_data(start_time=None):
-    query = supabase.table("wiolink") \
-        .select("time, name, humidity, celsius_degree, light_intensity") \
-        .eq("name", "wiolink door") \
-        .order("time", desc=False)
-
-    if start_time:
-        query = query.gte("time", start_time.isoformat())
-
-    response = query.execute()
-    df = pd.DataFrame(response.data)
-    df["time"] = pd.to_datetime(df["time"])
-    df = df.dropna(subset=["celsius_degree"])
-    return df
-
-# 🧠 呼叫函式取得資料
-start_time = get_start_time(time_range)
-df = load_dht11_data(start_time=start_time)
-
-# 📊 繪製互動式圖表
-fig = px.line(
-    data_frame=df,
-    x="time",
-    y="celsius_degree",
-    title=f"604 教室溫度變化趨勢（{time_range}）",
-    labels={"celsius_degree": "celsius degree", "time": "時間"},
-    height=500
+# 加上 560 ppb 的警戒線（= 0.56 ppm）
+fig.add_hline(
+    y=560,
+    line_dash="dash",
+    line_color="red",
+    annotation_text="警戒值：560 ppb",
+    annotation_position="top left"
 )
 
 st.plotly_chart(fig, use_container_width=True)
+#------------------------------------------------------
 
 
 
