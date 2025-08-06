@@ -265,6 +265,22 @@ IAQI_BREAKPOINTS = {
     ],
 }
 
+def calculate_iaqi_tvoc_simple(tvoc_ppm):
+    """
+    根據圖中 TVOC 分類表，直接對應 IAQI 分數（不套用 IAQI 插值公式）
+    """
+    if tvoc_ppm <= 0.065:
+        return 100  # Excellent
+    elif tvoc_ppm <= 0.22:
+        return 80   # Good
+    elif tvoc_ppm <= 0.66:
+        return 60   # Moderate
+    elif tvoc_ppm <= 2.2:
+        return 40   # Poor
+    elif tvoc_ppm <= 5.5:
+        return 20   # Unhealthy
+    else:
+        return 10   # Dangerously high
 
 def calculate_iaqi(value, breakpoints):
     """依據 IAQI 分段與公式計算單一項目的 IAQI"""
@@ -284,7 +300,7 @@ pm10_val = df_pm["pm10_atm"].iloc[-1]
 
 # 各項 IAQI
 iaqi_co2 = calculate_iaqi(co2_val, IAQI_BREAKPOINTS["co2eq"])
-iaqi_tvoc = calculate_iaqi(tvoc_val, IAQI_BREAKPOINTS["total_voc"])
+iaqi_tvoc = calculate_iaqi_tvoc_simple(tvoc_val)
 iaqi_pm1 = calculate_iaqi(pm10_val, IAQI_BREAKPOINTS["pm1_0_atm"])
 iaqi_pm25 = calculate_iaqi(pm25_val, IAQI_BREAKPOINTS["pm2_5_atm"])
 iaqi_pm10 = calculate_iaqi(pm10_val, IAQI_BREAKPOINTS["pm10_atm"])
@@ -312,6 +328,7 @@ def iaqi_label(score):
 st.subheader("🌈 室內空氣品質 IAQI 指數")
 st.markdown(f"""
 - CO2 IAQI : {iaqi_co2:.1f} , {iaqi_label(iaqi_co2)} , CO2 : {co2_val}
+- tVOC IAQ : {iaqi_label(iaqi_tvoc)} , tVOC : {tvoc_val}
 - PM1.0 IAQI : {iaqi_pm1:.1f} , {iaqi_label(iaqi_pm1)} , PM2.5 : {pm1_val}
 - PM2.5 IAQI : {iaqi_pm25:.1f} , {iaqi_label(iaqi_pm25)} , PM2.5 : {pm25_val}
 - PM10 IAQI : {iaqi_pm10:.1f} , {iaqi_label(iaqi_pm10)} , PM10 : {pm10_val}
