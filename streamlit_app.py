@@ -287,7 +287,7 @@ sensor_coord_map = {
     "wiolink wall": [688, 215],
     "wiolink door": [500, 678],
     "604_air_quality": [0, 305],
-    "604_pm2.5" : [300,400]
+    "604_center" : [300,400]
 }
 
 # 從 Supabase 抓取最新一筆各感測器溫度資料
