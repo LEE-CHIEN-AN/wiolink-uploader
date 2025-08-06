@@ -298,7 +298,7 @@ def iaqi_label(score):
 # 顯示 IAQI 結果
 st.subheader("🌈 室內空氣品質 IAQI 指數")
 st.markdown(f"""
-- CO2 IAQI: {iaqi_co2:.1f}, CO2 : {co2_val}
+- CO2 IAQI : {iaqi_co2:.1f} , iaqi_label(iaqi_co2) , CO2 : {co2_val}, 
 - **綜合IAQI 分數：** {iaqi_final:.1f}
 - **等級分類：** {iaqi_label(iaqi_final)}
 """)
