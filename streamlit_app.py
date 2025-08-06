@@ -295,6 +295,8 @@ iaqi_final = min(filter(None, [iaqi_co2, iaqi_tvoc, iaqi_pm1, iaqi_pm25, iaqi_pm
 
 # 分類文字
 def iaqi_label(score):
+    if score is None:
+        return "❓ 未定義"
     if score >= 81:
         return "🟢 良好"
     elif score >= 61:
@@ -310,7 +312,6 @@ def iaqi_label(score):
 st.subheader("🌈 室內空氣品質 IAQI 指數")
 st.markdown(f"""
 - CO2 IAQI : {iaqi_co2:.1f} , {iaqi_label(iaqi_co2)} , CO2 : {co2_val}
-- tVOC IAQI : {iaqi_tvoc} , {iaqi_label(iaqi_tvoc)} , tVOC : {tvoc_val}
 - PM1.0 IAQI : {iaqi_pm1:.1f} , {iaqi_label(iaqi_pm1)} , PM2.5 : {pm1_val}
 - PM2.5 IAQI : {iaqi_pm25:.1f} , {iaqi_label(iaqi_pm25)} , PM2.5 : {pm25_val}
 - PM10 IAQI : {iaqi_pm10:.1f} , {iaqi_label(iaqi_pm10)} , PM10 : {pm10_val}
