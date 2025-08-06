@@ -137,11 +137,11 @@ if __name__ == "__main__":
         upload_to_supabase(data)
 
     # 上傳 ThingSpeak 407 資料
-    ts_data = get_thingspeak_604center_data()
+    ts_data = get_thingspeak_407_data()
     if ts_data:
         upload_to_supabase(ts_data)
 
     # 上傳 ThingSpeak 604 center 資料
-    604center_data = get_thingspeak_407_data()
-    if 604center_data:
-        upload_to_supabase(604center_data)
+    vlabcenter_data = get_thingspeak_604center_data()
+    if vlabcenter_data:
+        upload_to_supabase(vlabcenter_data)
