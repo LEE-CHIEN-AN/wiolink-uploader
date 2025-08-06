@@ -242,6 +242,13 @@ IAQI_BREAKPOINTS = {
         (0.31, 0.75, 21, 40),
         (0.76, 1.0, 0, 20),
     ],
+    "pm1_0_atm": [
+        (0, 14, 81, 100),
+        (15, 34, 61, 80),
+        (35, 61, 41, 60),
+        (62, 95, 21, 40),
+        (96, 150, 0, 20),
+    ],
     "pm2_5_atm": [
         (0, 20, 81, 100),
         (21, 50, 61, 80),
@@ -270,17 +277,21 @@ def calculate_iaqi(value, breakpoints):
 # 取得最新資料（ppb 轉 ppm）
 co2_val = df["co2eq"].iloc[-1]
 tvoc_val = df["total_voc"].iloc[-1] / 1000  # ppb → ppm
+pm1_val = df_pm["pm1_0_atm"].iloc[-1]
 pm25_val = df_pm["pm2_5_atm"].iloc[-1]
 pm10_val = df_pm["pm10_atm"].iloc[-1]
+
 
 # 各項 IAQI
 iaqi_co2 = calculate_iaqi(co2_val, IAQI_BREAKPOINTS["co2eq"])
 iaqi_tvoc = calculate_iaqi(tvoc_val, IAQI_BREAKPOINTS["total_voc"])
+iaqi_pm1 = calculate_iaqi(pm10_val, IAQI_BREAKPOINTS["pm1_0_atm"])
 iaqi_pm25 = calculate_iaqi(pm25_val, IAQI_BREAKPOINTS["pm2_5_atm"])
 iaqi_pm10 = calculate_iaqi(pm10_val, IAQI_BREAKPOINTS["pm10_atm"])
 
+
 # 最終 IAQI：取最小值（代表最差）
-iaqi_final = min(filter(None, [iaqi_co2, iaqi_tvoc, iaqi_pm25, iaqi_pm10]))
+iaqi_final = min(filter(None, [iaqi_co2, iaqi_tvoc, iaqi_pm1, iaqi_pm25, iaqi_pm10]))
 
 # 分類文字
 def iaqi_label(score):
@@ -298,7 +309,11 @@ def iaqi_label(score):
 # 顯示 IAQI 結果
 st.subheader("🌈 室內空氣品質 IAQI 指數")
 st.markdown(f"""
-- CO2 IAQI : {iaqi_co2:.1f} , iaqi_label(iaqi_co2) , CO2 : {co2_val}, 
+- CO2 IAQI : {iaqi_co2:.1f} , {iaqi_label(iaqi_co2)} , CO2 : {co2_val}
+- tVOC IAQI : {iaqi_tvoc:.1f} , {iaqi_label(iaqi_tvoc)} , tVOC : {tvoc_val}
+- PM1.0 IAQI : {iaqi_pm1:.1f} , {iaqi_label(iaqi_pm1)} , PM2.5 : {pm1_val}
+- PM2.5 IAQI : {iaqi_pm25:.1f} , {iaqi_label(iaqi_pm25)} , PM2.5 : {pm25_val}
+- PM10 IAQI : {iaqi_pm10:.1f} , {iaqi_label(iaqi_pm10)} , PM10 : {pm10_val}
 - **綜合IAQI 分數：** {iaqi_final:.1f}
 - **等級分類：** {iaqi_label(iaqi_final)}
 """)
