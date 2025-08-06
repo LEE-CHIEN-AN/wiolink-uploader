@@ -102,7 +102,7 @@ def get_thingspeak_604center_data():
         feed = r.json()["feeds"][0]
 
         return {
-            "name": "ˊ604_center",
+            "name": "604_center",
             "humidity": int(feed["field2"]),
             "light_intensity":  None,
             "motion_detected": None,
