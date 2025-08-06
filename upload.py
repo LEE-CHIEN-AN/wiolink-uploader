@@ -11,10 +11,6 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 # === 所有 Wio Link 板子的 token 與命名設定 ===
 DEVICES = [
     {
-        "name": "wiolink window",  # 第一塊板子
-        "token": "ad721465a96333625477b3690643f076"
-    },
-    {
         "name": "wiolink door",  # 第二塊板子
         "token": "96c7644289c50aff68424a490845267f"
     },
@@ -94,6 +90,32 @@ def get_thingspeak_407_data():
         print("❌ 無法取得 ThingSpeak 資料：", e)
         return None
 
+def get_thingspeak_604center_data():
+    CHANNEL_ID = "3022873"
+    READ_API_KEY = "O1JMFSHUMRCTBQHL"
+    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
+    params = {"api_key": READ_API_KEY, "results": 1}
+
+    try:
+        r = requests.get(FIELD_URL, params=params, timeout=5)
+        r.raise_for_status()
+        feed = r.json()["feeds"][0]
+
+        return {
+            "name": "ˊ604_center",
+            "humidity": int(feed["field2"]),
+            "light_intensity":  None,
+            "motion_detected": None,
+            "celsius_degree": float(feed["field1"]),
+            "mag_approach": None,
+            "dust": None,
+            "touch": None
+        }
+
+    except Exception as e:
+        print("❌ 無法取得 ThingSpeak 資料：", e)
+        return None
+        
 # === 將單筆感測資料上傳至 Supabase ===
 def upload_to_supabase(data):
     try:
@@ -115,6 +137,11 @@ if __name__ == "__main__":
         upload_to_supabase(data)
 
     # 上傳 ThingSpeak 407 資料
-    ts_data = get_thingspeak_407_data()
+    ts_data = get_thingspeak_604center_data()
     if ts_data:
         upload_to_supabase(ts_data)
+
+    # 上傳 ThingSpeak 604 center 資料
+    604center_data = get_thingspeak_407_data()
+    if 604center_data:
+        upload_to_supabase(604center_data)
