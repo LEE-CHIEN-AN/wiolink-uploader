@@ -22,7 +22,6 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # === Wio Link 裝置設定 ===
 DEVICES = [
-    {"name": "wiolink window", "token": "ad721465a96333625477b3690643f076"},
     {"name": "wiolink door", "token": "96c7644289c50aff68424a490845267f"},
     {"name": "wiolink wall", "token": "1b10e1172b455a426b53af996442c0ce"}
 ]
@@ -36,19 +35,14 @@ SENSORS = {
     "mag_approach": "/GroveMagneticSwitchD0/approach"
 }
 
-# === ThingSpeak API 設定 ===
-READ_API_KEY = "797QS4ZPIJYT4U7W"
-CHANNEL_ID = "3026055"
-FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
-
 # === 上傳到 PostgreSQL 的工具 ===
 def upload_to_postgres(data):
     try:
         cursor.execute("""
             INSERT INTO sensor_data (
                 name, humidity, light_intensity,
-                motion_detected, celsius_degree, mag_approach, dust, touch
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                motion_detected, celsius_degree, mag_approach, dust, touch, pm1_0_atm, pm2_5_atm, pm10_atm
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             data.get("name"),
             data.get("humidity"),
@@ -57,7 +51,10 @@ def upload_to_postgres(data):
             data.get("celsius_degree"),
             data.get("mag_approach"),
             data.get("dust"),
-            data.get("touch")
+            data.get("touch"),
+            data.get("pm1_0_atm"),
+            data.get("pm2_5_atm"),
+            data.get("pm10_atm")
         ))
         print("✅ 本地上傳成功：", data)
     except Exception as e:
@@ -80,7 +77,10 @@ def get_sensor_data(device):
         "motion_detected": None,
         "dust": None,
         "celsius_degree": None,
-        "mag_approach": None
+        "mag_approach": None,
+        "pm1_0_atm": None,
+        "pm2_5_atm": None,
+        "pm10_atm": None
     }
     for key, path in SENSORS.items():
         url = f"{BASE_URL}{path}?access_token={device['token']}"
@@ -93,8 +93,15 @@ def get_sensor_data(device):
             print(f"[錯誤] 抓取 {device['name']} 的 {key} 失敗：", e)
     return result
 
+
+
+
 # === 抓取 ThingSpeak 最新一筆資料 ===
-def fetch_latest_thingspeak():
+def fetch_latest_thingspeak_407():
+    # === ThingSpeak API 設定 ===
+    READ_API_KEY = "797QS4ZPIJYT4U7W"
+    CHANNEL_ID = "3026055"
+    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
     try:
         response = requests.get(FIELD_URL, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
         response.raise_for_status()
@@ -108,7 +115,10 @@ def fetch_latest_thingspeak():
             "celsius_degree": float(feed["field1"]),
             "mag_approach": None,
             "dust": None,
-            "touch": int(feed["field4"])
+            "touch": int(feed["field4"]),
+            "pm1_0_atm": None,
+            "pm2_5_atm": None,
+            "pm10_atm": None
         }
 
         upload_to_postgres(data)
@@ -116,9 +126,14 @@ def fetch_latest_thingspeak():
 
     except Exception as e:
         print("❌ ThingSpeak 最新資料抓取失敗：", e)
+        
+        
 
 # === 補抓過去 5 分鐘內 touch == 1 的資料並寫入 PostgreSQL ===
 def fetch_touch_events():
+    READ_API_KEY = "797QS4ZPIJYT4U7W"
+    CHANNEL_ID = "3026055"
+    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
     try:
         response = requests.get(FIELD_URL, params={"api_key": READ_API_KEY, "results": 100}, timeout=5)
         response.raise_for_status()
@@ -142,7 +157,10 @@ def fetch_touch_events():
                         "celsius_degree": float(feed["field1"]),
                         "mag_approach": None,
                         "dust": None,
-                        "touch": 1
+                        "touch": 1,
+                        "pm1_0_atm": None,
+                        "pm2_5_atm": None,
+                        "pm10_atm": None
                     }
                     upload_to_postgres(data)
                     count += 1
@@ -153,6 +171,70 @@ def fetch_touch_events():
     except Exception as e:
         print("❌ 抓取 ThingSpeak touch=1 資料失敗：", e)
 
+
+
+# === 抓取 ThingSpeak 604 window 最新一筆資料 ===
+def fetch_latest_thingspeak_604window():
+    # === ThingSpeak API 設定 ===
+    READ_API_KEY = "G9XE5ZK8PCDHADKC"
+    CHANNEL_ID = "3027253"
+    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
+    try:
+        response = requests.get(FIELD_URL, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
+        response.raise_for_status()
+
+        feed = response.json()["feeds"][0]
+        data = {
+            "name": "wiolink window",
+            "humidity": int(feed["field2"]),
+            "light_intensity": None,
+            "motion_detected": None,
+            "celsius_degree": float(feed["field1"]),
+            "mag_approach": int(feed["field3"]),
+            "dust": None,
+            "touch": None,
+            "pm1_0_atm": int(feed["field4"]),
+            "pm2_5_atm": int(feed["field5"]),
+            "pm10_atm": int(feed["field6"])
+        }
+
+        upload_to_postgres(data)
+        upload_to_supabase(data)
+
+    except Exception as e:
+        print("❌ ThingSpeak 最新資料抓取失敗：", e)
+        
+# === 抓取 ThingSpeak 604 center 最新一筆資料 ===
+def fetch_latest_thingspeak_604center():
+    # === ThingSpeak API 設定 ===
+    READ_API_KEY = "O1JMFSHUMRCTBQHL"
+    CHANNEL_ID = "3022873"
+    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
+    try:
+        response = requests.get(FIELD_URL, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
+        response.raise_for_status()
+
+        feed = response.json()["feeds"][0]
+        data = {
+            "name": "604_center",
+            "humidity": int(feed["field2"]),
+            "light_intensity": None,
+            "motion_detected": None,
+            "celsius_degree": float(feed["field1"]),
+            "mag_approach": None,
+            "dust": None,
+            "touch": None,
+            "pm1_0_atm": None,
+            "pm2_5_atm": None,
+            "pm10_atm": None
+        }
+
+        upload_to_postgres(data)
+        upload_to_supabase(data)
+
+    except Exception as e:
+        print("❌ ThingSpeak 最新資料抓取失敗：", e)
+        
 # === 主程式執行區 ===
 if __name__ == "__main__":
     # 1. 上傳所有 Wio Link 板子資料
@@ -161,8 +243,13 @@ if __name__ == "__main__":
         upload_to_supabase(data)
         upload_to_postgres(data)
 
+    #上傳最新一筆 wiolink window
+    fetch_latest_thingspeak_604window()
+    
+    # 上傳最新一筆 604_center
+    fetch_latest_thingspeak_604center()
+    
     # 2. 上傳最新一筆 407_aircondition
-    fetch_latest_thingspeak()
-
+    fetch_latest_thingspeak_407()
     # 3. 補上傳 touch=1 資料（過去 5 分鐘內）
     fetch_touch_events()
