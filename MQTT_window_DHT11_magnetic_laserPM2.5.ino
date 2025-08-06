@@ -1,11 +1,9 @@
 #include <ESP8266WiFi.h>
-#include <ESP8266WiFiMulti.h>
 #include <WiFiClient.h>
 #include <SimplePgSQL.h>
-#include <Wire.h>
 #include <ESPSupabase.h>
 #include <ArduinoJson.h>
-
+#include <PubSubClient.h>
 //Setup for DHT======================================
 #include <DHT.h>
 #define DHTPIN 12  //wio link D1 is 12
@@ -55,7 +53,7 @@ const char* str[] = {"sensor num: ", "PM1.0 concentration(CF=1,Standard particul
                      "PM10 concentration(Atmospheric environment,unit:ug/m3): ",
                     };
 
-HM330XErrorCode print_result(const char* str, uint16_t value) {
+err_t  print_result(const char* str, uint16_t value) {
     if (NULL == str) {
         return ERROR_PARAM;
     }
@@ -65,7 +63,7 @@ HM330XErrorCode print_result(const char* str, uint16_t value) {
 }
 
 /*parse buf with 29 uint8_t-data*/
-HM330XErrorCode parse_result(uint8_t* data) {
+err_t  parse_result(uint8_t* data) {
     uint16_t value = 0;
     if (NULL == data) {
         return ERROR_PARAM;
@@ -79,7 +77,7 @@ HM330XErrorCode parse_result(uint8_t* data) {
     return NO_ERROR;
 }
 
-HM330XErrorCode parse_result_value(uint8_t* data) {
+err_t  parse_result_value(uint8_t* data) {
     if (NULL == data) {
         return ERROR_PARAM;
     }
@@ -118,7 +116,7 @@ int mag_approcah = -1;
 int pm1_0_atm = -1;
 int pm2_5_atm = -1;
 int pm10_atm = -1;
-
+int mag_approach = -1;
 
 
 // Setup for MQTT=============================
@@ -129,13 +127,12 @@ const char* password = "116eceac";
 const char* mqttServer = "mqtt3.thingspeak.com";  // MQTT伺服器位址
 const char* mqttUserName = "BhUdDigAAwMLHjclJzkUHAI";
 const char* mqttPwd = "P3ouTmxpaa2a2RrbzisZgzCp";
-const char* clientID = " BhUdDigAAwMLHjclJzkUHAI";
+const char* clientID = "BhUdDigAAwMLHjclJzkUHAI";
 const char* topic = "channels/3027253/publish";  // 不用填「寫入API密鑰」
 
 unsigned long prevMillis = 0;  // 暫存經過時間（毫秒）
 const long interval = 30000;  // 上傳資料的間隔時間，30秒。
 String msgStr = "";      // 暫存MQTT訊息字串
-
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -192,42 +189,6 @@ void setup() {
   //For Magnetic Switch=========================================
   pinMode(MAGNECTIC_SWITCH, INPUT);
 
-  //For WiFi=================================================================
-  //WiFi.config(local_IP, gateway, subnet); // 靜態 IP 設定 一定要在 WiFi.begin() 之前
-  wifiMulti.addAP("CAECE611 2G", "116eceac");
-  wifiMulti.addAP("RLab_2.4G", "ntucerlab");
-  wifiMulti.addAP("jie", "0926197320");
-  wifiMulti.addAP("i_want_to_go_home", "33438542");
-
-  Serial.println("Connecting");
-  while (wifiMulti.run() != WL_CONNECTED) {//mulitWiFi
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(WiFi.SSID());              // 告訴我們是哪一組ssid連線到
-  Serial.print("IP address:");
-  Serial.println(WiFi.localIP());           // 送出ESP8266連線到IP多少
-
-  // ✅ 在 WiFi 連線成功之後才呼叫 WiFi.SSID()
-  String currentSSID = WiFi.SSID();
-  if (currentSSID == "CAECE611 2G") {
-    PGIP = IPAddress(192, 168, 0, 45);
-  } else if (currentSSID == "RLab_2.4G") {
-    PGIP = IPAddress(192, 168, 50, 35);
-  } else if (currentSSID == "jie") {
-    PGIP = IPAddress(10, 138, 177, 129);
-  } else if (currentSSID == "i_want_to_go_home") {
-    PGIP = IPAddress(192, 168, 0, 102);
-  } else {
-    Serial.println("Unknown WiFi. Using default PGIP.");
-    PGIP = IPAddress(192, 168, 0, 45);
-  }
-  Serial.print("Selected PGIP: ");
-  Serial.println(PGIP);
-
-
   Serial.println("Timer set to 60 seconds (timerDelay variable), it will take 60 seconds before publishing the first reading.");
 
   // Init Supabase
@@ -243,7 +204,6 @@ void loop() {
     reconnect();
   }
   client.loop();
-
 
    // 等待30秒
   if (millis() - prevMillis > interval) {
@@ -277,17 +237,16 @@ void loop() {
     //read DHT-11---------------------------------------
 
     //read Magnetic Switch
-    mag_approach = isNearMagnet()
+    mag_approach = isNearMagnet();
     Serial.print("magnetic approach : ");
     Serial.print(mag_approach);
 
     // 組合MQTT訊息；field1填入溫度、field2填入濕度
-    msgStr = msgStr + "field1=" + t + "&field2=" + h + "&field3=" + mag_approach + "&field4=" + pm1_0_atm + "&field5=" + pm2_5_atm "&field6=" + pm10_atm;
+    msgStr = msgStr + "field1=" + t + "&field2=" + h + "&field3=" + mag_approach + "&field4=" + pm1_0_atm + "&field5=" + pm2_5_atm + "&field6=" + pm10_atm;
     Serial.print("Publish message: ");
     Serial.println(msgStr);
     client.publish(topic, msgStr.c_str());       // 發布MQTT主題與訊息
     msgStr = "";
-
   }
   
 }
