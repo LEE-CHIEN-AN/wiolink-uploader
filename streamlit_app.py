@@ -61,7 +61,7 @@ def load_data_604PM():
 
     response = supabase.table("wiolink") \
         .select("time, name, pm1_0_atm,pm2_5_atm, pm10_atm") \
-        .eq("name", "604_pm2.5") \
+        .eq("name", "wiolink window") \
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
         .execute()
