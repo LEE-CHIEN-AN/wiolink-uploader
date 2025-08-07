@@ -351,6 +351,56 @@ st.markdown(f"""
 - **等級分類：** {iaqi_label(iaqi_final)}
 """)
 
+# 熱舒適度 =============================================================================
+# 以下程式碼為新增區塊：根據用戶環境使用 pythermalcomfort 套件計算熱舒適度 PMV 與 PPD
+
+from pythermalcomfort.models import pmv_ppd
+
+# 提取氣候參數
+ta = latest["celsius_degree"]       # Operative temperature (室內操作溫度)
+tr = ta                             # 假設輻射溫度與操作溫度相同（可再補充感測資料）
+v = 0.1                           # 室內氣流速度，假設為 0.1 m/s
+rh = latest["humidity"]            # 相對濕度 %
+met = 1.1                          # 代謝率：電腦教室打字
+clo = 0.5                          # 衣著隔熱（夏季短袖、大學生）
+
+# calculate relative air speed
+v_r = v_relative(v=v, met=met)
+# calculate dynamic clothing
+clo_d = clo_dynamic_ashrae(clo=clo, met=met)
+
+# 計算 PMV 與 PPD
+results = pmv_ppd_ashrae(tdb=ta, tr=tr, vr=v_r, rh=rh, met=met, clo=clo_d, model="55-2023")
+
+pmv = results.pmv
+ppd = results.ppd
+
+# 舒適程度標籤
+def comfort_label(pmv_val):
+    if -0.5 <= pmv_val <= 0.5:
+        return "🟢 熱舒適（ASHRAE 80%）"
+    elif -0.7 <= pmv_val <= 0.7:
+        return "🟡 還可接受（ASHRAE 90%）"
+    else:
+        return "🔴 熱不適"
+
+label = comfort_label(pmv)
+
+# 顯示結果
+st.subheader("🌡️ 熱舒適度評估 (PMV/PPD)")
+st.markdown(f"""
+- **PMV 指數**：{pmv:.2f}
+- **PPD 不滿意比例**：{ppd:.1f}%
+- Relative air speed : {v_r: .2f}m/s
+- **熱感分類**：{label}
+- **參數使用：**
+    - 操作溫度：{ta} °C
+    - 氣流速度：{v} m/s
+    - 相對濕度：{rh:.0f} %
+    - 代謝率：{met} met
+    - 衣著隔熱：{clo} clo
+""")
+
 #==============================================================================
 st.title("🌱 604 空氣品質感測看板")
 fig, axs = plt.subplots(4, 2, figsize=(18, 24))
