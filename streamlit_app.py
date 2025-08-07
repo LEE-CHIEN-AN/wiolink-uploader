@@ -354,7 +354,8 @@ st.markdown(f"""
 # 熱舒適度 =============================================================================
 # 以下程式碼為新增區塊：根據用戶環境使用 pythermalcomfort 套件計算熱舒適度 PMV 與 PPD
 
-from pythermalcomfort.models import pmv_ppd
+from pythermalcomfort.models import pmv_ppd_ashrae
+from pythermalcomfort.utilities import v_relative, clo_dynamic_ashrae
 
 # 提取氣候參數
 ta = latest["celsius_degree"]       # Operative temperature (室內操作溫度)
