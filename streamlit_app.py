@@ -60,7 +60,7 @@ def load_data_604PM():
     start_time = now - timedelta(hours=24)
 
     response = supabase.table("wiolink") \
-        .select("time, name, pm1_0_atm,pm2_5_atm, pm10_atm") \
+        .select("time, name, pm1_0_atm,pm2_5_atm, pm10_atm, mag_approach") \
         .eq("name", "wiolink window") \
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
@@ -73,6 +73,8 @@ def load_data_604PM():
 df = load_data_604()
 df_light  = load_data_604light()
 df_pm = load_data_604PM()
+
+
 # ========== 畫面與圖表 ==========
 st.title("🌱 604 空氣品質即時概況")
 
@@ -80,6 +82,14 @@ st.title("🌱 604 空氣品質即時概況")
 latest = df.iloc[-1]
 latest_light = df_light.iloc[-1]
 latest_pm = df_pm.iloc[-1]
+
+# 窗戶狀態轉文字與 emoji
+window_state_val = latest_pm.get("mag_approach")
+if window_state_val in [1, True]:
+    window_status = "Closed"
+else:
+    window_status = "Open"
+    
 st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 # 以 HTML + CSS 呈現卡片
@@ -109,6 +119,7 @@ st.markdown(
     .red {{background-color: #e53935; }}
     .pink {{ background-color: #d81b60; }}
     .purple {{ background-color: #8e24aa; }}
+    .darkblue{{ background-color: #00008B; }}
     .value {{
         font-size: 32px;
         font-weight: bold;
@@ -151,6 +162,10 @@ st.markdown(
         <div class="card purple">
             <div class="label">PM10</div>
             <div class="value">{latest_pm["pm10_atm"]} μg/m³</div>
+        </div>
+        <div class="card darkblue">
+            <div class="label">Window </div>
+            <div class="value">{window_status} </div>
         </div>
 
     </div>
