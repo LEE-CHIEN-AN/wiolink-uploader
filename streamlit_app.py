@@ -333,11 +333,11 @@ def iaqi_label(score):
     elif score >= 61:
         return "🟢 普通"
     elif score >= 41:
-        return "🟠 輕度污染"
+        return "🟡 輕度污染"
     elif score >= 21:
-        return "🔴 中度污染"
+        return "🟠 中度污染"
     else:
-        return "🟥 嚴重污染"
+        return "🔴 嚴重污染"
 
 # 顯示 IAQI 結果
 st.subheader("🌈 室內空氣品質 IAQI 指數")
