@@ -606,6 +606,58 @@ st.title("🌡️ 604 溼度熱力圖")
 st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
 st.pyplot(plt)
 
+
+#-------------------------------------------------------------
+# Re-import required libraries after kernel reset
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+from pythermalcomfort.models import pmv_ppd_ashrae
+
+# 補充固定參數：metabolic rate, clo, air_speed
+met = 1.1   # 打字活動
+clo = 0.5   # 夏季輕便服裝
+v = 0.1     # 空氣流速 (m/s)
+# 計算每個感測點的 PPD（使用 pythermalcomfort）
+df["ppd"] = df.apply(lambda row: pmv_ppd_ashrae(tdb=row["temperature"],
+                            tr=row["temperature"],
+                            rh=row["humidity"],
+                            vr=v_relative(v=v, met=met),
+                            met=met,
+                            clo=clo)["ppd"], axis=1)
+
+ppd_values = df["ppd"].to_numpy()
+
+# 插值 PPD 值
+grid_z_ppd = idw(grid_x, grid_y, points, ppd_values)
+
+# 繪製 PPD 熱力圖
+fig, ax = plt.subplots(figsize=(10, 7))
+cmap = plt.get_cmap('rainbow')
+norm = mcolors.Normalize(vmin=5, vmax=30)
+
+img = ax.imshow(grid_z_ppd, extent=(0, 688, 0, 687), origin='lower',
+                cmap=cmap, norm=norm, aspect='auto')
+scatter = ax.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
+
+# 標註每個感測器 PPD 值
+for i, row in df.iterrows():
+    label = f"{row['sensor_name'].split()[-1]}\nPPD={row['ppd']:.1f}%"
+    ax.text(row["x"] - 35, row["y"] + 10, label,
+            color='black', fontsize=9, weight='bold')
+
+cbar = plt.colorbar(img, label='PPD (%)')
+cbar.set_ticks(np.arange(5, 31, 1))
+
+ax.set_title("Classroom PPD Heatmap (IDW Interpolation)", pad=20)
+ax.set_xlabel("X (cm)")
+ax.set_ylabel("Y (cm)")
+ax.legend(loc='lower right')
+plt.tight_layout()
+
+st.pyplot(plt)
+
 # 604 溫溼度熱力圖 END========================================
 #================================================================
 # ---------- 資料抓取函式 ----------
