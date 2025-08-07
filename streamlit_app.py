@@ -385,7 +385,7 @@ def comfort_label(pmv_val):
     elif pmv_val <= -0.5:
         return "Slightly cool 涼爽"
     elif pmv_val <= 0.5:
-        return "Neutral"
+        return "Neutral 適中"
     elif pmv_val <= 1.5:
         return "Slightly warm 稍熱"
     elif pmv_val <= 2.5:
