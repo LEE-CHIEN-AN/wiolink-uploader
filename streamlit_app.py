@@ -399,8 +399,8 @@ hot_comfort_label = comfort_label(pmv)
 st.subheader("🌡️ 熱舒適度評估 (PMV/PPD)")
 st.markdown(f"""
 - **PMV 指數**：{pmv:.2f}
-- **PPD 不滿意比例**：{ppd:.1f}% (約有 {ppd:.1f}% 人感到熱不適)
 - **熱感分類 Thermal sensation**：{hot_comfort_label}
+- **PPD 不滿意比例**：{ppd:.1f}% (約有 {ppd:.1f}% 人感到熱不適)
 - **參數使用：**
     - 操作溫度：{ta} °C
     - 氣流速度：{v} m/s
