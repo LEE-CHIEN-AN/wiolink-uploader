@@ -569,10 +569,10 @@ def load_co2_data():
 # ---------- 畫面與圖表 ----------
 st.title("🌿 604 長期趨勢圖")
 
-df = load_co2_data()
+df_longterm = load_co2_data()
 
 fig = px.line(
-    data_frame=df,
+    data_frame=df_longterm,
     x="time",
     y="co2eq",
     title="604 教室 CO₂ 濃度變化趨勢",
@@ -591,7 +591,7 @@ fig.add_hline(
 st.plotly_chart(fig, use_container_width=True)
 #--------------------------------------------
 fig = px.line(
-    data_frame=df,
+    data_frame=df_longterm,
     x="time",
     y="total_voc",
     title="604 教室 VOC 濃度變化趨勢",
