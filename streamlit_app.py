@@ -379,19 +379,19 @@ ppd = results.ppd
 # 舒適程度標籤
 def comfort_label(pmv_val):
     if pmv_val <= -2.5 :
-        return "Cold"
+        return "Cold 冷"
     elif pmv_val <= -1.5:
-        return "Cool"
+        return "Cool 有點冷"
     elif pmv_val <= -0.5:
-        return "Slightly cool"
+        return "Slightly cool 涼爽"
     elif pmv_val <= 0.5:
         return "Neutral"
     elif pmv_val <= 1.5:
-        return "Slightly warm"
+        return "Slightly warm 稍熱"
     elif pmv_val <= 2.5:
-        return "Warm"
+        return "Warm 很熱"
     else:
-        return "Hot"
+        return "Hot 熱死了"
 
 hot_comfort_label = comfort_label(pmv)
 
@@ -399,9 +399,8 @@ hot_comfort_label = comfort_label(pmv)
 st.subheader("🌡️ 熱舒適度評估 (PMV/PPD)")
 st.markdown(f"""
 - **PMV 指數**：{pmv:.2f}
-- **PPD 不滿意比例**：{ppd:.1f}%
-- Relative air speed : {v_r: .2f}m/s
-- **熱感分類 Thermal sensation **：{hot_comfort_label}
+- **PPD 不滿意比例**：{ppd:.1f}% (約有 {ppd:.1f}% 人感到熱不適)
+- **熱感分類 Thermal sensation**：{hot_comfort_label}
 - **參數使用：**
     - 操作溫度：{ta} °C
     - 氣流速度：{v} m/s
@@ -409,7 +408,7 @@ st.markdown(f"""
     - 代謝率：{met} met
     - 衣著隔熱：{clo} clo
 """)
-
+#=============================================================================
 #==============================================================================
 st.title("🌱 604 空氣品質感測看板")
 fig, axs = plt.subplots(4, 2, figsize=(18, 24))
