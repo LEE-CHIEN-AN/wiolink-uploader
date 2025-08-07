@@ -60,7 +60,7 @@ def load_data_604PM():
     start_time = now - timedelta(hours=24)
 
     response = supabase.table("wiolink") \
-        .select("time, name, pm1_0_atm,pm2_5_atm, pm10_atm, mag_approach") \
+        .select("time, name, pm1_0_atm,pm2_5_atm, pm10_atm") \
         .eq("name", "wiolink window") \
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
@@ -73,8 +73,6 @@ def load_data_604PM():
 df = load_data_604()
 df_light  = load_data_604light()
 df_pm = load_data_604PM()
-
-
 # ========== 畫面與圖表 ==========
 st.title("🌱 604 空氣品質即時概況")
 
@@ -82,14 +80,6 @@ st.title("🌱 604 空氣品質即時概況")
 latest = df.iloc[-1]
 latest_light = df_light.iloc[-1]
 latest_pm = df_pm.iloc[-1]
-
-# 窗戶狀態轉文字與 emoji
-window_state_val = latest_pm.get("mag_approach")
-if window_state_val in [1, True]:
-    window_status = "Closed"
-else:
-    window_status = "Open"
-    
 st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 # 以 HTML + CSS 呈現卡片
@@ -119,7 +109,6 @@ st.markdown(
     .red {{background-color: #e53935; }}
     .pink {{ background-color: #d81b60; }}
     .purple {{ background-color: #8e24aa; }}
-    .darkblue{{ background-color: #00008B; }}
     .value {{
         font-size: 32px;
         font-weight: bold;
@@ -162,10 +151,6 @@ st.markdown(
         <div class="card purple">
             <div class="label">PM10</div>
             <div class="value">{latest_pm["pm10_atm"]} μg/m³</div>
-        </div>
-        <div class="card darkblue">
-            <div class="label">Window </div>
-            <div class="value">{window_status} </div>
         </div>
 
     </div>
@@ -351,6 +336,61 @@ st.markdown(f"""
 - **等級分類：** {iaqi_label(iaqi_final)}
 """)
 
+#==============================================================================
+st.title("🌱 604 空氣品質感測看板")
+fig, axs = plt.subplots(4, 2, figsize=(18, 24))
+
+# CO2
+axs[0, 0].plot(df["time"], df["co2eq"], marker='o', color='green')
+axs[0, 0].set_title("CO₂")
+axs[0, 0].set_ylabel("ppm")
+axs[0, 0].tick_params(axis='x', rotation=45)
+
+# TVOC
+axs[0, 1].plot(df["time"], df["total_voc"], marker='o', color='orange')
+axs[0, 1].set_title("TVOC")
+axs[0, 1].set_ylabel("ppb")
+axs[0, 1].tick_params(axis='x', rotation=45)
+
+# Temperature
+axs[1, 0].plot(df["time"], df["celsius_degree"], marker='o', color='gold')
+axs[1, 0].set_title("Temperature")
+axs[1, 0].set_ylabel("°C")
+axs[1, 0].tick_params(axis='x', rotation=45)
+
+# Humidity
+axs[1, 1].plot(df["time"], df["humidity"], marker='o', color='blue')
+axs[1, 1].set_title("Humidity")
+axs[1, 1].set_ylabel("%")
+axs[1, 1].tick_params(axis='x', rotation=45)
+
+# light
+axs[2,0].plot(df_light["time"], df_light["light_intensity"], marker='o', color='brown')
+axs[2,0].set_title("Light intensity")
+axs[2,0].set_ylabel("lux")
+axs[2,0].tick_params(axis='x', rotation=45)
+
+# PM2.5
+axs[2, 1].plot(df_pm["time"], df_pm["pm2_5_atm"], marker='o', color='pink')
+axs[2, 1].set_title("PM2.5")
+axs[2, 1].set_ylabel("μg/m³")
+axs[2, 1].tick_params(axis='x', rotation=45)
+
+# PM1.0
+axs[3, 0].plot(df_pm["time"], df_pm["pm1_0_atm"], marker='o', color='red')
+axs[3, 0].set_title("PM2.5")
+axs[3, 0].set_ylabel("μg/m³")
+axs[3, 0].tick_params(axis='x', rotation=45)
+
+# PM10
+axs[3, 1].plot(df_pm["time"], df_pm["pm10_atm"], marker='o', color='purple')
+axs[3, 1].set_title("PM2.5")
+axs[3, 1].set_ylabel("μg/m³")
+axs[3, 1].tick_params(axis='x', rotation=45)
+
+plt.tight_layout()
+st.pyplot(fig)
+
 # 604 溫度熱力圖========================================
 import matplotlib.colors as mcolors
 # 感測器固定座標
@@ -493,61 +533,6 @@ st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
 st.pyplot(plt)
 
 # 604 溫溼度熱力圖 END========================================
-#==============================================================================
-st.title("🌱 604 空氣品質感測看板")
-fig, axs = plt.subplots(4, 2, figsize=(18, 24))
-
-# CO2
-axs[0, 0].plot(df["time"], df["co2eq"], marker='o', color='green')
-axs[0, 0].set_title("CO₂")
-axs[0, 0].set_ylabel("ppm")
-axs[0, 0].tick_params(axis='x', rotation=45)
-
-# TVOC
-axs[0, 1].plot(df["time"], df["total_voc"], marker='o', color='orange')
-axs[0, 1].set_title("TVOC")
-axs[0, 1].set_ylabel("ppb")
-axs[0, 1].tick_params(axis='x', rotation=45)
-
-# Temperature
-axs[1, 0].plot(df["time"], df["celsius_degree"], marker='o', color='gold')
-axs[1, 0].set_title("Temperature")
-axs[1, 0].set_ylabel("°C")
-axs[1, 0].tick_params(axis='x', rotation=45)
-
-# Humidity
-axs[1, 1].plot(df["time"], df["humidity"], marker='o', color='blue')
-axs[1, 1].set_title("Humidity")
-axs[1, 1].set_ylabel("%")
-axs[1, 1].tick_params(axis='x', rotation=45)
-
-# light
-axs[2,0].plot(df_light["time"], df_light["light_intensity"], marker='o', color='brown')
-axs[2,0].set_title("Light intensity")
-axs[2,0].set_ylabel("lux")
-axs[2,0].tick_params(axis='x', rotation=45)
-
-# PM2.5
-axs[2, 1].plot(df_pm["time"], df_pm["pm2_5_atm"], marker='o', color='pink')
-axs[2, 1].set_title("PM2.5")
-axs[2, 1].set_ylabel("μg/m³")
-axs[2, 1].tick_params(axis='x', rotation=45)
-
-# PM1.0
-axs[3, 0].plot(df_pm["time"], df_pm["pm1_0_atm"], marker='o', color='red')
-axs[3, 0].set_title("PM2.5")
-axs[3, 0].set_ylabel("μg/m³")
-axs[3, 0].tick_params(axis='x', rotation=45)
-
-# PM10
-axs[3, 1].plot(df_pm["time"], df_pm["pm10_atm"], marker='o', color='purple')
-axs[3, 1].set_title("PM2.5")
-axs[3, 1].set_ylabel("μg/m³")
-axs[3, 1].tick_params(axis='x', rotation=45)
-
-plt.tight_layout()
-st.pyplot(fig)
-
 #================================================================
 # ---------- 資料抓取函式 ----------
 @st.cache_data(ttl=60)  # 每1分鐘更新一次
@@ -569,10 +554,10 @@ def load_co2_data():
 # ---------- 畫面與圖表 ----------
 st.title("🌿 604 長期趨勢圖")
 
-df_longterm = load_co2_data()
+df = load_co2_data()
 
 fig = px.line(
-    data_frame=df_longterm,
+    data_frame=df,
     x="time",
     y="co2eq",
     title="604 教室 CO₂ 濃度變化趨勢",
@@ -591,7 +576,7 @@ fig.add_hline(
 st.plotly_chart(fig, use_container_width=True)
 #--------------------------------------------
 fig = px.line(
-    data_frame=df_longterm,
+    data_frame=df,
     x="time",
     y="total_voc",
     title="604 教室 VOC 濃度變化趨勢",
