@@ -74,12 +74,7 @@ df = load_data_604()
 df_light  = load_data_604light()
 df_pm = load_data_604PM()
 
-# 窗戶狀態轉文字與 emoji
-window_state_val = latest_pm.get("mag_approach")
-if window_state_val in [1, True]:
-    window_status = "🟢 Open"
-else:
-    window_status = "🔴 Closed"
+
 # ========== 畫面與圖表 ==========
 st.title("🌱 604 空氣品質即時概況")
 
@@ -87,6 +82,14 @@ st.title("🌱 604 空氣品質即時概況")
 latest = df.iloc[-1]
 latest_light = df_light.iloc[-1]
 latest_pm = df_pm.iloc[-1]
+
+# 窗戶狀態轉文字與 emoji
+window_state_val = latest_pm.get("mag_approach")
+if window_state_val in [1, True]:
+    window_status = "🟢 Open"
+else:
+    window_status = "🔴 Closed"
+    
 st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 # 以 HTML + CSS 呈現卡片
