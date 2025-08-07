@@ -634,7 +634,7 @@ grid_z_ppd = idw(grid_x, grid_y, points, ppd_values)
 
 # 繪製 PPD 熱力圖
 fig, ax = plt.subplots(figsize=(10, 7))
-cmap = plt.get_cmap('rainbow')
+cmap = plt.get_cmap('Spectral').reversed()
 norm = mcolors.Normalize(vmin=5, vmax=30)
 
 img = ax.imshow(grid_z_ppd, extent=(0, 688, 0, 687), origin='lower',
