@@ -86,9 +86,9 @@ latest_pm = df_pm.iloc[-1]
 # 窗戶狀態轉文字與 emoji
 window_state_val = latest_pm.get("mag_approach")
 if window_state_val in [1, True]:
-    window_status = "🟢 Open"
+    window_status = "Closed"
 else:
-    window_status = "🔴 Closed"
+    window_status = "Open"
     
 st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
