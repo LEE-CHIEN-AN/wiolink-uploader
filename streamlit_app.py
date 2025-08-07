@@ -378,14 +378,22 @@ ppd = results.ppd
 
 # 舒適程度標籤
 def comfort_label(pmv_val):
-    if -0.5 <= pmv_val <= 0.5:
-        return "🟢 熱舒適（ASHRAE 80%）"
-    elif -0.7 <= pmv_val <= 0.7:
-        return "🟡 還可接受（ASHRAE 90%）"
+    if pmv_val <= -2.5 :
+        return "Cold"
+    elif pmv_val <= -1.5:
+        return "Cool"
+    elif pmv_val <= -0.5:
+        return "Slightly cool"
+    elif pmv_val <= 0.5:
+        return "Neutral"
+    elif pmv_val <= 1.5:
+        return "Slightly warm"
+    elif pmv_val <= 2.5:
+        return "Warm"
     else:
-        return "🔴 熱不適"
+        return "Hot"
 
-label = comfort_label(pmv)
+hot_comfort_label = comfort_label(pmv)
 
 # 顯示結果
 st.subheader("🌡️ 熱舒適度評估 (PMV/PPD)")
@@ -393,7 +401,7 @@ st.markdown(f"""
 - **PMV 指數**：{pmv:.2f}
 - **PPD 不滿意比例**：{ppd:.1f}%
 - Relative air speed : {v_r: .2f}m/s
-- **熱感分類**：{label}
+- **熱感分類 Thermal sensation **：{hot_comfort_label}
 - **參數使用：**
     - 操作溫度：{ta} °C
     - 氣流速度：{v} m/s
