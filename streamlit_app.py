@@ -608,6 +608,7 @@ st.pyplot(plt)
 
 
 #-------------------------------------------------------------
+st.title("🌡️ 604 熱舒適度不滿意人數比例（PPD）熱力圖")
 # Re-import required libraries after kernel reset
 import numpy as np
 import pandas as pd
