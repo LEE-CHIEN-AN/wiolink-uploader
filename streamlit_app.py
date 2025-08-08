@@ -481,16 +481,7 @@ def idw(x, y, points, values, power=2):
             weights = 1 / dists**power
             z[i,j] = np.sum(weights * values) / np.sum(weights)
     return z
-#------------------------------------------------------------------------------
-grid_z = idw(grid_x, grid_y, points, temperatures)
 
-# 色彩設定與繪圖
-cmap = plt.get_cmap('RdYlBu').reversed()
-norm = mcolors.Normalize(vmin=20, vmax=30)  # 固定 colorbar 區間為 20~30°C
-
-plt.figure(figsize=(10, 7))
-img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',cmap=cmap, norm=norm, aspect='auto')
-plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
 
 sensor_short_name = {
     "wiolink window": "Window",
@@ -501,111 +492,16 @@ sensor_short_name = {
 }
 df["short_name"] = df["sensor_name"].apply(lambda x: sensor_short_name.get(x, x))
 
-for i, row in df.iterrows():
-    label = f"{row['short_name']}\n{row['temperature']:.1f}°C"
-    plt.text(row["x"] -15, row["y"] + 10, label,
-             color='black', fontsize=9, weight='bold')
-
-cbar = plt.colorbar(img, label='Temperature (°C)')
-cbar.set_ticks(np.arange(20, 31, 1))  # 每 1°C 一格
-plt.title("Classroom Temperature Heatmap (IDW, with Sensor Labels)", pad=20)
-plt.xlabel("X (cm)")
-plt.ylabel("Y (cm)")
-plt.legend(loc='lower right')
-plt.tight_layout()
 
 
-# 顯示在 Streamlit
-st.title("🌡️ 604 溫度熱力圖")
-# 找出資料時間（最晚時間）
-st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
-st.pyplot(plt)
-
-#---------------------------------------------------------------------------------
-
-plt.figure(figsize=(10, 7))
-humidity_values = df["humidity"].to_numpy()
-grid_z_humidity = idw(grid_x, grid_y, points, humidity_values)
-
-cmap = plt.get_cmap('jet').reversed()
-norm=mcolors.Normalize(vmin=0, vmax=100)
-
-img = plt.imshow(grid_z_humidity, extent=(0, 688, 0, 687), origin='lower', cmap=cmap, norm=norm, aspect='auto')
-plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
-
-for i, row in df.iterrows():
-    label = f"{row['short_name']}\n{row['humidity']}%"
-    plt.text(row["x"] - 15, row["y"] + 10, label,
-             color='black', fontsize=9, weight='bold')
-
-# 色彩設定與繪圖
-cbar = plt.colorbar(img, label='Humidity (%)')
-cbar.set_ticks(np.arange(0, 105, 5))
-plt.title("Classroom Humidity Heatmap (IDW, with Sensor Labels)", pad=20)
-plt.xlabel("X (cm)")
-plt.ylabel("Y (cm)")
-plt.legend(loc='lower right')
-plt.tight_layout()
-# 顯示在 Streamlit
-st.title("🌡️ 604 溼度熱力圖")
-# 找出資料時間（最晚時間）
-st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
-st.pyplot(plt)
 
 
-#-------------------------------------------------------------
-st.title("🌡️ 604 舒適度不滿意人數比例（PPD）熱力圖")
-# Re-import required libraries after kernel reset
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-from pythermalcomfort.models import pmv_ppd_ashrae
 
-# 補充固定參數：metabolic rate, clo, air_speed
-met = 1.1   # 打字活動
-clo = 0.5   # 夏季輕便服裝
-v = 0.1     # # 典型空調室內風速 (m/s)
-# ===== 2) 以每個感測器的溫/溼來算 PMV 與 PPD =====）
-def calc_pmv_ppd(row):
-    res = pmv_ppd_ashrae(tdb=row["temperature"],
-                            tr=row["temperature"],
-                            rh=row["humidity"],
-                            vr=v_relative(v=v, met=met),
-                            met=met,
-                            clo=clo)
-    return pd.Series({"pmv": res.pmv, "ppd": res.ppd })
-    
-df[["pmv", "ppd"]] = df.apply(calc_pmv_ppd, axis=1)
 
-# ===== 3) 仍然用 PPD 做 IDW 插值（熱力圖顏色代表 PPD）=====
-ppd_values = df["ppd"].to_numpy()
-grid_z_ppd = idw(grid_x, grid_y, points, ppd_values)
 
-# ===== 4) 畫 PPD 熱力圖 + 在每個感測器位置同時標註 PMV / PPD =====
-fig, ax = plt.subplots(figsize=(10, 7))
-cmap = plt.get_cmap('Spectral').reversed()
-norm = mcolors.Normalize(vmin=5, vmax=30)
 
-img = ax.imshow(grid_z_ppd, extent=(0, 688, 0, 687), origin='lower',
-                cmap=cmap, norm=norm, aspect='auto')
-scatter = ax.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
 
-for _, row in df.iterrows():
-    # 例：PMV=0.41 / PPD=8.7%
-    label = f"PMV= {row['pmv']:.2f}\nPPD={row['ppd']:.1f}%"
-    ax.text(row["x"]-35, row["y"]+12, label, color="black", fontsize=9, weight="bold")
 
-cbar = plt.colorbar(img, label='PPD (%)')
-cbar.set_ticks(np.arange(5, 31, 1))
-
-ax.set_title("Classroom PPD Heatmap (IDW Interpolation)", pad=20)
-ax.set_xlabel("X (cm)")
-ax.set_ylabel("Y (cm)")
-ax.legend(loc='lower right')
-plt.tight_layout()
-
-st.pyplot(plt)
 #--------------------------------------------------------------
 # ========= 共同：載入並固定翻轉平面圖（一次即可重用） =========
 from PIL import Image
