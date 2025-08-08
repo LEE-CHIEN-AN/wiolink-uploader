@@ -593,7 +593,7 @@ scatter = ax.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sen
 
 for _, row in df.iterrows():
     # 例：PMV=0.41 / PPD=8.7%
-    label = f"PMV={row['pmv']:.2f}\nPPD={row['ppd']:.1f}%"
+    label = f"PMV= {row['pmv']:.2f}\nPPD={row['ppd']:.1f}%"
     ax.text(row["x"]-35, row["y"]+12, label, color="black", fontsize=9, weight="bold")
 
 cbar = plt.colorbar(img, label='PPD (%)')
