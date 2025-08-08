@@ -554,7 +554,7 @@ st.pyplot(plt)
 
 
 #-------------------------------------------------------------
-st.title("🌡️ 604 熱舒適度不滿意人數比例（PPD）熱力圖")
+st.title("🌡️ 604 舒適度不滿意人數比例（PPD）熱力圖")
 # Re-import required libraries after kernel reset
 import numpy as np
 import pandas as pd
@@ -565,21 +565,24 @@ from pythermalcomfort.models import pmv_ppd_ashrae
 # 補充固定參數：metabolic rate, clo, air_speed
 met = 1.1   # 打字活動
 clo = 0.5   # 夏季輕便服裝
-v = 0.1     # 空氣流速 (m/s)
-# 計算每個感測點的 PPD（使用 pythermalcomfort）
-df["ppd"] = df.apply(lambda row: pmv_ppd_ashrae(tdb=row["temperature"],
+v = 0.1     # # 典型空調室內風速 (m/s)
+# ===== 2) 以每個感測器的溫/溼來算 PMV 與 PPD =====）
+def calc_pmv_ppd(row):
+    res = pmv_ppd_ashrae(tdb=row["temperature"],
                             tr=row["temperature"],
                             rh=row["humidity"],
                             vr=v_relative(v=v, met=met),
                             met=met,
-                            clo=clo)["ppd"], axis=1)
+                            clo=clo
+    return pd.Series({"pmv": res.pmv, "ppd": res.ppd })
+    
+df[["pmv", "ppd"]] = df.apply(calc_pmv_ppd, axis=1)
 
+# ===== 3) 仍然用 PPD 做 IDW 插值（熱力圖顏色代表 PPD）=====
 ppd_values = df["ppd"].to_numpy()
-
-# 插值 PPD 值
 grid_z_ppd = idw(grid_x, grid_y, points, ppd_values)
 
-# 繪製 PPD 熱力圖
+# ===== 4) 畫 PPD 熱力圖 + 在每個感測器位置同時標註 PMV / PPD =====
 fig, ax = plt.subplots(figsize=(10, 7))
 cmap = plt.get_cmap('Spectral').reversed()
 norm = mcolors.Normalize(vmin=5, vmax=30)
@@ -588,11 +591,14 @@ img = ax.imshow(grid_z_ppd, extent=(0, 688, 0, 687), origin='lower',
                 cmap=cmap, norm=norm, aspect='auto')
 scatter = ax.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
 
-# 標註每個感測器 PPD 值
-for i, row in df.iterrows():
-    label = f"{row['sensor_name'].split()[-1]}\nPPD={row['ppd']:.1f}%"
-    ax.text(row["x"] - 35, row["y"] + 10, label,
-            color='black', fontsize=9, weight='bold')
+for _, row in df.iterrows():
+    # 例：PMV=0.41 / PPD=8.7%
+    label = f"PMV={row['pmv']:.2f}\nPPD={row['ppd']:.1f}%"
+    ax.text(row["x"]-18, row["y"]+12, label, color="black", fontsize=9, weight="bold")
+
+# 20% PPD 等值線（ASHRAE/ISO 推薦上限）
+cs = ax.contour(grid_x, grid_y, grid_z_ppd, levels=[20], colors="red", linewidths=1.8)
+ax.clabel(cs, inline=True, fmt="PPD=20%", fontsize=9)
 
 cbar = plt.colorbar(img, label='PPD (%)')
 cbar.set_ticks(np.arange(5, 31, 1))
