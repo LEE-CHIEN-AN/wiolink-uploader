@@ -613,7 +613,7 @@ import matplotlib.image as mpimg
 import numpy as np
 
 FLOOR_PATH = "604vlab.png"  # 你的透明底平面圖 PNG
-FLOOR_ALPHA = 0.45                         # 固定透明度
+FLOOR_ALPHA = 0.80                         # 固定透明度
 XMAX, YMAX = 688, 687
 
 # 讀圖並固定上下翻轉（圖片原點通常在左上、熱力圖在左下）
