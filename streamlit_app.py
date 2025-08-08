@@ -343,14 +343,16 @@ def iaqi_label(score):
 # 顯示 IAQI 結果
 st.subheader("🌈 室內空氣品質 IAQI 指數")
 st.markdown(f"""
-- CO2 IAQI : {iaqi_co2:.1f} , {iaqi_label(iaqi_co2)} , CO2 : {co2_val}
 - tVOC IAQ : {iaqi_label(iaqi_tvoc)} , tVOC : {tvoc_val}
+- CO2 IAQI : {iaqi_co2:.1f} , {iaqi_label(iaqi_co2)} , CO2 : {co2_val}
 - PM1.0 IAQI : {iaqi_pm1:.1f} , {iaqi_label(iaqi_pm1)} , PM2.5 : {pm1_val}
 - PM2.5 IAQI : {iaqi_pm25:.1f} , {iaqi_label(iaqi_pm25)} , PM2.5 : {pm25_val}
 - PM10 IAQI : {iaqi_pm10:.1f} , {iaqi_label(iaqi_pm10)} , PM10 : {pm10_val}
 - **綜合IAQI 分數：** {iaqi_final:.1f}
 - **等級分類：** {iaqi_label(iaqi_final)}
 """)
+st.image("https://cdn.prod.website-files.com/5f23e100544c90c140f34325/67ae00f27393a15e23104e7d_6284b21bc2130b8160d3cac5_25.jpeg", use_container_width=True)
+st.image("https://cdn.prod.website-files.com/5f23e100544c90c140f34325/68948e3f0fe25227203a2692_IAQI.png", use_container_width=True)
 
 # 熱舒適度 =============================================================================
 # 以下程式碼為新增區塊：根據用戶環境使用 pythermalcomfort 套件計算熱舒適度 PMV 與 PPD
