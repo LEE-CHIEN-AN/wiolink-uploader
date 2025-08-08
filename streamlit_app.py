@@ -488,7 +488,7 @@ grid_z = idw(grid_x, grid_y, points, temperatures)
 cmap = plt.get_cmap('RdYlBu').reversed()
 norm = mcolors.Normalize(vmin=20, vmax=30)  # 固定 colorbar 區間為 20~30°C
 
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(10, 7))
 img = plt.imshow(grid_z, extent=(0, 688, 0, 687), origin='lower',cmap=cmap, norm=norm, aspect='auto')
 plt.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sensors')
 
@@ -523,7 +523,7 @@ st.pyplot(plt)
 
 #---------------------------------------------------------------------------------
 
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(10, 7))
 humidity_values = df["humidity"].to_numpy()
 grid_z_humidity = idw(grid_x, grid_y, points, humidity_values)
 
@@ -594,7 +594,7 @@ scatter = ax.scatter(df["x"], df["y"], c='white', edgecolors='black', label='Sen
 for _, row in df.iterrows():
     # 例：PMV=0.41 / PPD=8.7%
     label = f"PMV={row['pmv']:.2f}\nPPD={row['ppd']:.1f}%"
-    ax.text(row["x"]-18, row["y"]+12, label, color="black", fontsize=9, weight="bold")
+    ax.text(row["x"]-35, row["y"]+12, label, color="black", fontsize=9, weight="bold")
 
 cbar = plt.colorbar(img, label='PPD (%)')
 cbar.set_ticks(np.arange(5, 31, 1))
