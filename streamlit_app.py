@@ -481,7 +481,7 @@ def idw(x, y, points, values, power=2):
             weights = 1 / dists**power
             z[i,j] = np.sum(weights * values) / np.sum(weights)
     return z
-
+#------------------------------------------------------------------------------
 
 
 sensor_short_name = {
@@ -492,6 +492,44 @@ sensor_short_name = {
     "604_pm2.5" : "PM2.5"
 }
 df["short_name"] = df["sensor_name"].apply(lambda x: sensor_short_name.get(x, x))
+
+grid_z = idw(grid_x, grid_y, points, temperatures)
+#---------------------------------------------------------------------------------
+
+humidity_values = df["humidity"].to_numpy()
+grid_z_humidity = idw(grid_x, grid_y, points, humidity_values)
+
+#-------------------------------------------------------------
+
+# Re-import required libraries after kernel reset
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+from pythermalcomfort.models import pmv_ppd_ashrae
+
+# 補充固定參數：metabolic rate, clo, air_speed
+met = 1.1   # 打字活動
+clo = 0.5   # 夏季輕便服裝
+v = 0.1     # # 典型空調室內風速 (m/s)
+# ===== 2) 以每個感測器的溫/溼來算 PMV 與 PPD =====）
+def calc_pmv_ppd(row):
+    res = pmv_ppd_ashrae(tdb=row["temperature"],
+                            tr=row["temperature"],
+                            rh=row["humidity"],
+                            vr=v_relative(v=v, met=met),
+                            met=met,
+                            clo=clo)
+    return pd.Series({"pmv": res.pmv, "ppd": res.ppd })
+    
+df[["pmv", "ppd"]] = df.apply(calc_pmv_ppd, axis=1)
+
+# ===== 3) 仍然用 PPD 做 IDW 插值（熱力圖顏色代表 PPD）=====
+ppd_values = df["ppd"].to_numpy()
+grid_z_ppd = idw(grid_x, grid_y, points, ppd_values)
+
+# ===== 4) 畫 PPD 熱力圖 + 在每個感測器位置同時標註 PMV / PPD =====
+
 
 
 #--------------------------------------------------------------
@@ -510,8 +548,6 @@ _floor_img = _floor_img.transpose(Image.FLIP_TOP_BOTTOM)
 _floor_arr = np.array(_floor_img)
 
 # ========= 溫度熱力圖（底：熱力圖 → 疊：平面圖 → 點/標註） =========
-grid_z = idw(grid_x, grid_y, points, temperatures)
-
 fig, ax = plt.subplots(figsize=(10, 7))
 # 底：溫度熱力圖
 cmap_t = plt.get_cmap('RdYlBu').reversed()
@@ -540,8 +576,6 @@ st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
 st.pyplot(fig)
 
 # ========= 濕度熱力圖 =========
-grid_z_humidity = idw(grid_x, grid_y, points, humidity_values)
-
 fig, ax = plt.subplots(figsize=(10, 7))
 cmap_h = plt.get_cmap('jet').reversed()
 norm_h = mcolors.Normalize(vmin=0, vmax=100)
