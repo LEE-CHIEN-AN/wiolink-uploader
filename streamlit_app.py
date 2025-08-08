@@ -711,7 +711,7 @@ ax.imshow(_floor_arr, extent=(0, XMAX, 0, YMAX), origin='lower',
 # 感測器 + PMV/PPD 標註
 ax.scatter(df["x"], df["y"], c='white', edgecolors='black', s=50, label='Sensors', zorder=2)
 for _, row in df.iterrows():
-    ax.text(row["x"]-35, row["y"]+12, f"{row['short_name']}\nPMV={row['pmv']:.2f} PPD={row['ppd']:.1f}%",
+    ax.text(row["x"]-35, row["y"]+12, f"{PMV={row['pmv']:.2f}\nPPD={row['ppd']:.1f}%",
             color="black", fontsize=9, weight="bold", zorder=3)
 
 # 20% PPD 等值線（ASHRAE/ISO 推薦上限）
