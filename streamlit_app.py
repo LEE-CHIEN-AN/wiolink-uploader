@@ -482,6 +482,7 @@ def idw(x, y, points, values, power=2):
             z[i,j] = np.sum(weights * values) / np.sum(weights)
     return z
 
+grid_z = idw(grid_x, grid_y, points, temperatures)
 
 sensor_short_name = {
     "wiolink window": "Window",
