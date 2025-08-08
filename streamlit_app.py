@@ -481,7 +481,7 @@ def idw(x, y, points, values, power=2):
             weights = 1 / dists**power
             z[i,j] = np.sum(weights * values) / np.sum(weights)
     return z
-
+#------------------------------------------------------------------------------
 grid_z = idw(grid_x, grid_y, points, temperatures)
 
 # 色彩設定與繪圖
@@ -606,6 +606,127 @@ ax.legend(loc='lower right')
 plt.tight_layout()
 
 st.pyplot(plt)
+#--------------------------------------------------------------
+# ========= 共同：載入並固定翻轉平面圖（一次即可重用） =========
+from PIL import Image
+import matplotlib.image as mpimg
+import numpy as np
+
+FLOOR_PATH = "604vlab.png"  # 你的透明底平面圖 PNG
+FLOOR_ALPHA = 0.45                         # 固定透明度
+XMAX, YMAX = 688, 687
+
+# 讀圖並固定上下翻轉（圖片原點通常在左上、熱力圖在左下）
+_floor_img = Image.open(FLOOR_PATH).convert("RGBA")
+_floor_img = _floor_img.transpose(Image.FLIP_TOP_BOTTOM)
+_floor_arr = np.array(_floor_img)
+
+# ========= 溫度熱力圖（底：熱力圖 → 疊：平面圖 → 點/標註） =========
+fig, ax = plt.subplots(figsize=(10, 7))
+# 底：溫度熱力圖
+cmap_t = plt.get_cmap('RdYlBu').reversed()
+norm_t = mcolors.Normalize(vmin=20, vmax=30)
+img = ax.imshow(grid_z, extent=(0, XMAX, 0, YMAX), origin='lower',
+                cmap=cmap_t, norm=norm_t, aspect='equal', zorder=0)
+# 疊：平面圖（固定翻轉 + 固定透明度）
+ax.imshow(_floor_arr, extent=(0, XMAX, 0, YMAX), origin='lower',
+          alpha=FLOOR_ALPHA, zorder=1)
+
+# 點與標註
+ax.scatter(df["x"], df["y"], c='white', edgecolors='black', s=50, label='Sensors', zorder=2)
+for _, row in df.iterrows():
+    ax.text(row["x"]-15, row["y"]+10, f"{row['short_name']}\n{row['temperature']:.1f}°C",
+            color='black', fontsize=9, weight='bold', zorder=3)
+
+cbar = plt.colorbar(img, ax=ax, label='Temperature (°C)')
+cbar.set_ticks(np.arange(20, 31, 1))
+ax.set_title("Classroom Temperature Heatmap over Floor Plan", pad=20)
+ax.set_xlabel("X (cm)"); ax.set_ylabel("Y (cm)")
+ax.set_aspect('equal', adjustable='box')
+ax.legend(loc='lower right')
+plt.tight_layout()
+st.title("🌡️ 604 溫度熱力圖（含平面圖）")
+st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
+st.pyplot(fig)
+
+# ========= 濕度熱力圖 =========
+fig, ax = plt.subplots(figsize=(10, 7))
+cmap_h = plt.get_cmap('jet').reversed()
+norm_h = mcolors.Normalize(vmin=0, vmax=100)
+img = ax.imshow(grid_z_humidity, extent=(0, XMAX, 0, YMAX), origin='lower',
+                cmap=cmap_h, norm=norm_h, aspect='equal', zorder=0)
+ax.imshow(_floor_arr, extent=(0, XMAX, 0, YMAX), origin='lower',
+          alpha=FLOOR_ALPHA, zorder=1)
+
+ax.scatter(df["x"], df["y"], c='white', edgecolors='black', s=50, label='Sensors', zorder=2)
+for _, row in df.iterrows():
+    ax.text(row["x"]-15, row["y"]+10, f"{row['short_name']}\n{row['humidity']:.0f}%",
+            color='black', fontsize=9, weight='bold', zorder=3)
+
+cbar = plt.colorbar(img, ax=ax, label='Humidity (%)')
+cbar.set_ticks(np.arange(0, 105, 5))
+ax.set_title("Classroom Humidity Heatmap over Floor Plan", pad=20)
+ax.set_xlabel("X (cm)"); ax.set_ylabel("Y (cm)")
+ax.set_aspect('equal', adjustable='box')
+ax.legend(loc='lower right')
+plt.tight_layout()
+st.title("💧 604 溼度熱力圖（含平面圖）")
+st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
+st.pyplot(fig)
+
+# ========= PPD 熱力圖 =========
+from pythermalcomfort.models import pmv_ppd_ashrae
+from pythermalcomfort.utilities import v_relative
+
+met, clo, v = 1.1, 0.5, 0.1
+df[["pmv", "ppd"]] = df.apply(
+    lambda r: pd.Series(
+        {
+            "pmv": pmv_ppd_ashrae(
+                tdb=r["temperature"], tr=r["temperature"], rh=r["humidity"],
+                vr=v_relative(v=v, met=met), met=met, clo=clo
+            ).pmv,
+            "ppd": pmv_ppd_ashrae(
+                tdb=r["temperature"], tr=r["temperature"], rh=r["humidity"],
+                vr=v_relative(v=v, met=met), met=met, clo=clo
+            ).ppd,
+        }
+    ),
+    axis=1,
+)
+
+ppd_values = df["ppd"].to_numpy()
+grid_z_ppd = idw(grid_x, grid_y, points, ppd_values)
+
+fig, ax = plt.subplots(figsize=(10, 7))
+cmap_p = plt.get_cmap('Spectral').reversed()
+norm_p = mcolors.Normalize(vmin=5, vmax=30)
+img = ax.imshow(grid_z_ppd, extent=(0, XMAX, 0, YMAX), origin='lower',
+                cmap=cmap_p, norm=norm_p, aspect='equal', zorder=0)
+
+# 疊：平面圖
+ax.imshow(_floor_arr, extent=(0, XMAX, 0, YMAX), origin='lower',
+          alpha=FLOOR_ALPHA, zorder=1)
+
+# 感測器 + PMV/PPD 標註
+ax.scatter(df["x"], df["y"], c='white', edgecolors='black', s=50, label='Sensors', zorder=2)
+for _, row in df.iterrows():
+    ax.text(row["x"]-35, row["y"]+12, f"PMV={row['pmv']:.2f}\nPPD={row['ppd']:.1f}%",
+            color="black", fontsize=9, weight="bold", zorder=3)
+
+# 20% PPD 等值線（ASHRAE/ISO 推薦上限）
+cs = ax.contour(grid_x, grid_y, grid_z_ppd, levels=[20], colors="red", linewidths=1.8, zorder=3)
+ax.clabel(cs, inline=True, fmt="PPD=20%%", fontsize=9)
+
+cbar = plt.colorbar(img, ax=ax, label='PPD (%)')
+cbar.set_ticks(np.arange(5, 31, 1))
+ax.set_title("Classroom PPD Heatmap over Floor Plan", pad=20)
+ax.set_xlabel("X (cm)"); ax.set_ylabel("Y (cm)")
+ax.set_aspect('equal', adjustable='box')
+ax.legend(loc='lower right')
+plt.tight_layout()
+st.title("🧊 604 PPD 熱力圖（含平面圖）")
+st.pyplot(fig)
 
 # 604 溫溼度熱力圖 END========================================
 #================================================================
