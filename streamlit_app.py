@@ -573,7 +573,7 @@ def calc_pmv_ppd(row):
                             rh=row["humidity"],
                             vr=v_relative(v=v, met=met),
                             met=met,
-                            clo=clo
+                            clo=clo)
     return pd.Series({"pmv": res.pmv, "ppd": res.ppd })
     
 df[["pmv", "ppd"]] = df.apply(calc_pmv_ppd, axis=1)
