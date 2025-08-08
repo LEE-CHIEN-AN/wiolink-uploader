@@ -330,7 +330,7 @@ def iaqi_label(score):
     if score is None:
         return "❓ 未定義"
     if score >= 81:
-        return "🟢 良好"
+        return "🔵 良好"
     elif score >= 61:
         return "🟢 普通"
     elif score >= 41:
@@ -410,60 +410,6 @@ st.markdown(f"""
     - 衣著隔熱 Clothing level：{clo} clo (夏季短袖長褲)
 """)
 #=============================================================================
-#==============================================================================
-st.title("🌱 604 空氣品質感測看板")
-fig, axs = plt.subplots(4, 2, figsize=(18, 24))
-
-# CO2
-axs[0, 0].plot(df["time"], df["co2eq"], marker='o', color='green')
-axs[0, 0].set_title("CO₂")
-axs[0, 0].set_ylabel("ppm")
-axs[0, 0].tick_params(axis='x', rotation=45)
-
-# TVOC
-axs[0, 1].plot(df["time"], df["total_voc"], marker='o', color='orange')
-axs[0, 1].set_title("TVOC")
-axs[0, 1].set_ylabel("ppb")
-axs[0, 1].tick_params(axis='x', rotation=45)
-
-# Temperature
-axs[1, 0].plot(df["time"], df["celsius_degree"], marker='o', color='gold')
-axs[1, 0].set_title("Temperature")
-axs[1, 0].set_ylabel("°C")
-axs[1, 0].tick_params(axis='x', rotation=45)
-
-# Humidity
-axs[1, 1].plot(df["time"], df["humidity"], marker='o', color='blue')
-axs[1, 1].set_title("Humidity")
-axs[1, 1].set_ylabel("%")
-axs[1, 1].tick_params(axis='x', rotation=45)
-
-# light
-axs[2,0].plot(df_light["time"], df_light["light_intensity"], marker='o', color='brown')
-axs[2,0].set_title("Light intensity")
-axs[2,0].set_ylabel("lux")
-axs[2,0].tick_params(axis='x', rotation=45)
-
-# PM2.5
-axs[2, 1].plot(df_pm["time"], df_pm["pm2_5_atm"], marker='o', color='pink')
-axs[2, 1].set_title("PM2.5")
-axs[2, 1].set_ylabel("μg/m³")
-axs[2, 1].tick_params(axis='x', rotation=45)
-
-# PM1.0
-axs[3, 0].plot(df_pm["time"], df_pm["pm1_0_atm"], marker='o', color='red')
-axs[3, 0].set_title("PM2.5")
-axs[3, 0].set_ylabel("μg/m³")
-axs[3, 0].tick_params(axis='x', rotation=45)
-
-# PM10
-axs[3, 1].plot(df_pm["time"], df_pm["pm10_atm"], marker='o', color='purple')
-axs[3, 1].set_title("PM2.5")
-axs[3, 1].set_ylabel("μg/m³")
-axs[3, 1].tick_params(axis='x', rotation=45)
-
-plt.tight_layout()
-st.pyplot(fig)
 
 # 604 溫度熱力圖========================================
 import matplotlib.colors as mcolors
