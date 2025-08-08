@@ -482,7 +482,7 @@ def idw(x, y, points, values, power=2):
             z[i,j] = np.sum(weights * values) / np.sum(weights)
     return z
 
-grid_z = idw(grid_x, grid_y, points, temperatures)
+
 
 sensor_short_name = {
     "wiolink window": "Window",
@@ -492,15 +492,6 @@ sensor_short_name = {
     "604_pm2.5" : "PM2.5"
 }
 df["short_name"] = df["sensor_name"].apply(lambda x: sensor_short_name.get(x, x))
-
-
-
-
-
-
-
-
-
 
 
 #--------------------------------------------------------------
@@ -519,6 +510,8 @@ _floor_img = _floor_img.transpose(Image.FLIP_TOP_BOTTOM)
 _floor_arr = np.array(_floor_img)
 
 # ========= 溫度熱力圖（底：熱力圖 → 疊：平面圖 → 點/標註） =========
+grid_z = idw(grid_x, grid_y, points, temperatures)
+
 fig, ax = plt.subplots(figsize=(10, 7))
 # 底：溫度熱力圖
 cmap_t = plt.get_cmap('RdYlBu').reversed()
@@ -547,6 +540,8 @@ st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
 st.pyplot(fig)
 
 # ========= 濕度熱力圖 =========
+grid_z_humidity = idw(grid_x, grid_y, points, humidity_values)
+
 fig, ax = plt.subplots(figsize=(10, 7))
 cmap_h = plt.get_cmap('jet').reversed()
 norm_h = mcolors.Normalize(vmin=0, vmax=100)
