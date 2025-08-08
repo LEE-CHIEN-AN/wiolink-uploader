@@ -409,6 +409,7 @@ st.markdown(f"""
     - 代謝率 Metabolic rate：{met} met (Typing : 坐著用電腦打字、文書工作)
     - 衣著隔熱 Clothing level：{clo} clo (夏季短袖長褲)
 """)
+st.image("https://www.simscale.com/wp-content/uploads/2019/09/pmv_ppd-1.png", use_container_width=True)	
 #=============================================================================
 
 # 604 溫度熱力圖========================================
