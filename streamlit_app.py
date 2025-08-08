@@ -596,10 +596,6 @@ for _, row in df.iterrows():
     label = f"PMV={row['pmv']:.2f}\nPPD={row['ppd']:.1f}%"
     ax.text(row["x"]-18, row["y"]+12, label, color="black", fontsize=9, weight="bold")
 
-# 20% PPD 等值線（ASHRAE/ISO 推薦上限）
-cs = ax.contour(grid_x, grid_y, grid_z_ppd, levels=[20], colors="red", linewidths=1.8)
-ax.clabel(cs, inline=True, fmt="PPD=20%", fontsize=9)
-
 cbar = plt.colorbar(img, label='PPD (%)')
 cbar.set_ticks(np.arange(5, 31, 1))
 
