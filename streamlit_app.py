@@ -689,8 +689,7 @@ plt.tight_layout()
 st.title("🧊 604 PPD 熱力圖（含平面圖）")
 st.pyplot(fig)
 
-st.markdown(f"""預測平均表決 (Predicted Mean Vote，PMV)，是由丹麥學者P.O. Fanger教授於1972年所發表人體熱平衡模型，該模型用來表示人體對於環境中冷、熱的感受。""")
-st.markdown(f"""並以預測不滿意百分率(Predicted Percentage of Dissa-tisfied, PPD)，表示在該PMV舒適指標中，空間內有多少百分比的人感到不舒適。""")
+st.markdown(f"""預測不滿意百分率(Predicted Percentage of Dissa-tisfied, PPD)，表示在該PMV舒適指標中，空間內有多少百分比的人感到不舒適。""")
 st.markdown(f"""為了確保符合已知標準（ASHRAE 55 和 ISO 7730）的熱舒適度，空間內所有佔用區域的 PPD 值應保持在 20% 以下。""")
 st.image("https://www.simscale.com/wp-content/uploads/2019/09/pmv_ppd-1.png", use_container_width=True)	
 
