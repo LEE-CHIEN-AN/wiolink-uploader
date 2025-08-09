@@ -603,60 +603,7 @@ st.title("💧 604 溼度熱力圖（含平面圖）")
 st.markdown(f"📅 資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S')}")
 st.pyplot(fig)
 
-
-# ================= PMV 熱力圖（含平面圖疊加） =================
-from pythermalcomfort.models import pmv_ppd_ashrae
-from pythermalcomfort.utilities import v_relative
-from matplotlib.colors import TwoSlopeNorm
-
-# 參數：空調教室典型值（可依你需求調整）
-met, clo, v = 1.1, 0.5, 0.1  # 打字 / 夏季輕便 / 典型風速
-vr = v_relative(v=v, met=met)
-
-# 用溫度/濕度的插值網格，逐格計算 PMV（假設 tr = ta）
-pmv_grid = np.zeros_like(grid_z, dtype=float)
-nrow, ncol = grid_z.shape
-for i in range(nrow):
-    for j in range(ncol):
-        t_cell = float(grid_z[i, j])                # °C
-        rh_cell = float(grid_z_humidity[i, j])      # %
-        res = pmv_ppd_ashrae(
-            tdb=t_cell, tr=t_cell, vr=vr, rh=rh_cell,
-            met=met, clo=clo, model="55-2023"
-        )
-        pmv_grid[i, j] = res.pmv
-
-# 視覺化：以 0 為中心的雙向色標（藍冷、紅熱）
-fig, ax = plt.subplots(figsize=(10, 7))
-norm_pmv = TwoSlopeNorm(vmin=-1.0, vcenter=0.0, vmax=+1.0)  # 建議範圍 -1~+1
-img = ax.imshow(
-    pmv_grid, extent=(0, XMAX, 0, YMAX), origin='lower',
-    cmap='coolwarm', norm=norm_pmv, aspect='equal', zorder=0
-)
-
-# 疊：教室平面圖（固定上下翻轉 + 固定透明度）
-ax.imshow(_floor_arr, extent=(0, XMAX, 0, YMAX), origin='lower',
-          alpha=FLOOR_ALPHA, zorder=1)
-
-# 感測器點與標註（用先前算好的 df["pmv"] / df["ppd"] 也行）
-ax.scatter(df["x"], df["y"], c='white', edgecolors='black', s=50, zorder=2, label='Sensors')
-for _, row in df.iterrows():
-    ax.text(row["x"]-28, row["y"]+12,
-            f"PMV={row['pmv']:.2f}",  # 若尚未計算，可改顯示溫/濕
-            color='black', fontsize=9, weight='bold', zorder=3)
-
-cbar = plt.colorbar(img, ax=ax, label='PMV')
-cbar.set_ticks(np.round(np.linspace(-1, 1, 9), 2))
-ax.set_title("Classroom PMV Heatmap over Floor Plan", pad=20)
-ax.set_xlabel("X (cm)"); ax.set_ylabel("Y (cm)")
-ax.set_aspect('equal', adjustable='box')
-ax.legend(loc='lower right')
-plt.tight_layout()
-
-st.title("🌈 604 PMV 熱力圖（含平面圖）")
-st.pyplot(fig)
-
-# ========= PPD 熱力圖 =========
+# ========= PMV/PPD 熱力圖 =========
 from pythermalcomfort.models import pmv_ppd_ashrae
 from pythermalcomfort.utilities import v_relative
 
@@ -676,7 +623,39 @@ df[["pmv", "ppd"]] = df.apply(
     ),
     axis=1,
 )
+# ----------------- PMV 熱力圖 -------------------
+pmv_values = df["pmv"].to_numpy()
+grid_z_pmv = idw(grid_x, grid_y, points, pmv_values)
 
+fig, ax = plt.subplots(figsize=(10, 7))
+cmap_pmv = plt.get_cmap('RdYlBu').reversed()
+norm_pmv = mcolors.Normalize(vmin=-3, vmax=3)
+img = ax.imshow(grid_z_pmv, extent=(0, XMAX, 0, YMAX), origin='lower',
+                cmap=cmap_pmv, norm=norm_pmv, aspect='equal', zorder=0)
+# 疊：平面圖
+ax.imshow(_floor_arr, extent=(0, XMAX, 0, YMAX), origin='lower',
+          alpha=FLOOR_ALPHA, zorder=1)
+
+# 感測器 + PMV/PPD 標註
+ax.scatter(df["x"], df["y"], c='white', edgecolors='black', s=50, label='Sensors', zorder=2)
+for _, row in df.iterrows():
+    ax.text(row["x"]-35, row["y"]+12, f"{row['short_name']}\nPMV={row['pmv']:.2f}",
+            color="black", fontsize=9, weight="bold", zorder=3)
+    
+cbar = plt.colorbar(img, ax=ax, label='PMV')
+cbar.set_ticks(np.arange(-3, 4, 1))
+ax.set_title("Classroom PMV Heatmap over Floor Plan", pad=20)
+ax.set_xlabel("X (cm)"); ax.set_ylabel("Y (cm)")
+ax.set_aspect('equal', adjustable='box')
+ax.legend(loc='lower right')
+plt.tight_layout()
+st.title("🌡️ 604 PMV 熱力圖（含平面圖）")
+st.pyplot(fig)
+
+st.markdown(f"""預測平均表決 (Predicted Mean Vote，PMV)，是由丹麥學者P.O. Fanger教授於1972年所發表人體熱平衡模型，該模型用來表示人體對於環境中冷、熱的感受。""")
+st.image("https://www.simscale.com/wp-content/uploads/2019/09/Artboard-1-1024x320.png", use_container_width=True)	
+
+# ----------------- PPD 熱力圖 -------------------
 ppd_values = df["ppd"].to_numpy()
 grid_z_ppd = idw(grid_x, grid_y, points, ppd_values)
 
