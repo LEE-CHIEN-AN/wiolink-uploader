@@ -648,7 +648,7 @@ cs = ax.contour(grid_x, grid_y, grid_z_ppd, levels=[20], colors="red", linewidth
 ax.clabel(cs, inline=True, fmt="PPD=20%%", fontsize=9)
 
 cbar = plt.colorbar(img, ax=ax, label='PPD (%)')
-cbar.set_ticks(np.arange(5, 51, 1))
+cbar.set_ticks(np.arange(5, 51, 5))
 ax.set_title("Classroom PPD Heatmap over Floor Plan", pad=20)
 ax.set_xlabel("X (cm)"); ax.set_ylabel("Y (cm)")
 ax.set_aspect('equal', adjustable='box')
