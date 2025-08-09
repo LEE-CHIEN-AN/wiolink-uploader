@@ -382,15 +382,15 @@ ppd = results.ppd
 # 舒適程度標籤
 def comfort_label(pmv_val):
     if pmv_val <= -2.5 :
-        return "Cold 冷"
+        return "Cold 冷死了"
     elif pmv_val <= -1.5:
-        return "Cool 有點冷"
+        return "Cool 很冷"
     elif pmv_val <= -0.5:
-        return "Slightly cool 涼爽"
+        return "Slightly cool 稍微冷"
     elif pmv_val <= 0.5:
-        return "Neutral 適中"
+        return "Neutral 舒適"
     elif pmv_val <= 1.5:
-        return "Slightly warm 稍熱"
+        return "Slightly warm 稍微熱"
     elif pmv_val <= 2.5:
         return "Warm 很熱"
     else:
@@ -404,7 +404,7 @@ st.markdown(f"""
 - **PMV 指數**：{pmv:.2f}  （ 建議範圍：-0.5 ~ +0.5 ） 
 - **熱感分類 Thermal sensation**：{hot_comfort_label}
 - **PPD 不滿意比例**：{ppd:.1f}% (約有 {ppd:.1f}% 人感到熱不適) ( 建議範圍： ≤ 20% )
-- **參數使用：**
+- 參數使用：
     - 操作溫度 Operative temperature：{ta} °C
     - 相對濕度 Relative humidity：{rh:.0f} %
     - 氣流速度 Air speed：{v} m/s
@@ -629,7 +629,7 @@ grid_z_ppd = idw(grid_x, grid_y, points, ppd_values)
 
 fig, ax = plt.subplots(figsize=(10, 7))
 cmap_p = plt.get_cmap('Spectral').reversed()
-norm_p = mcolors.Normalize(vmin=5, vmax=30)
+norm_p = mcolors.Normalize(vmin=5, vmax=50)
 img = ax.imshow(grid_z_ppd, extent=(0, XMAX, 0, YMAX), origin='lower',
                 cmap=cmap_p, norm=norm_p, aspect='equal', zorder=0)
 
@@ -648,7 +648,7 @@ cs = ax.contour(grid_x, grid_y, grid_z_ppd, levels=[20], colors="red", linewidth
 ax.clabel(cs, inline=True, fmt="PPD=20%%", fontsize=9)
 
 cbar = plt.colorbar(img, ax=ax, label='PPD (%)')
-cbar.set_ticks(np.arange(5, 31, 1))
+cbar.set_ticks(np.arange(5, 51, 1))
 ax.set_title("Classroom PPD Heatmap over Floor Plan", pad=20)
 ax.set_xlabel("X (cm)"); ax.set_ylabel("Y (cm)")
 ax.set_aspect('equal', adjustable='box')
