@@ -628,7 +628,7 @@ pmv_values = df["pmv"].to_numpy()
 grid_z_pmv = idw(grid_x, grid_y, points, pmv_values)
 
 fig, ax = plt.subplots(figsize=(10, 7))
-cmap_pmv = plt.get_cmap('RdYlBu').reversed()
+cmap_pmv = plt.get_cmap('Spectral').reversed()
 norm_pmv = mcolors.Normalize(vmin=-3, vmax=3)
 img = ax.imshow(grid_z_pmv, extent=(0, XMAX, 0, YMAX), origin='lower',
                 cmap=cmap_pmv, norm=norm_pmv, aspect='equal', zorder=0)
