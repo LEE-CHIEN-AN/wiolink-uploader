@@ -772,7 +772,7 @@ def load_PM_data():
 
     df = pd.DataFrame(response.data)
     df["time"] = pd.to_datetime(df["time"])
-    df = df.dropna(subset=["co2eq"])
+    df = df.dropna(subset=["pm1_0_atm"])
     return df
 
 df_pm = load_PM_data()
