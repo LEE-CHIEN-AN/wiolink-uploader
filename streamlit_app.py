@@ -769,10 +769,10 @@ def load_PM_data():
         .eq("name", "wiolink window") \
         .order("time", desc=False) \
         .execute()
-
+    
     df = pd.DataFrame(response.data)
     df["time"] = pd.to_datetime(df["time"])
-    df = df.dropna(subset=["pm1_0_atm"])
+
     return df
 
 df_pm = load_PM_data()
