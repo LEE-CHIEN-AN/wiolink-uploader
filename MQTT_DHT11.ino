@@ -3,7 +3,7 @@
 
 //Setup for DHT======================================
 #include <DHT.h>
-#define DHTPIN 13  //wio link D1 is 12
+#define DHTPIN 12  //wio link D1 is 12
 
 // Uncomment the type of sensor in use:
 //#define DHTTYPE    DHT11     // DHT 11
@@ -13,16 +13,16 @@ DHT dht(DHTPIN, DHTTYPE);
 
 #define mqttPort 1883  // MQTT伺服器埠號
 
-const char* ssid = "jie";
-const char* password = "0926197320";
+const char* ssid = "CAECE611 2G";
+const char* password = "116eceac";
 const char* mqttServer = "mqtt3.thingspeak.com";  // MQTT伺服器位址
-const char* mqttUserName = "JxEuFCQcEysYMT0bODMPIw8";
-const char* mqttPwd = "p8uhCyYaqnHcTENbDaOMsgdg";
-const char* clientID = "JxEuFCQcEysYMT0bODMPIw8";
-const char* topic = "channels/3022873/publish";  // 不用填「寫入API密鑰」
+const char* mqttUserName = "DBAyFBgvNygQGTMZATsLOSI";
+const char* mqttPwd = "yfWjt4KKC3X00KNvxQLo6mPC";
+const char* clientID = "DBAyFBgvNygQGTMZATsLOSI";
+const char* topic = "channels/3031639/publish";  // 不用填「寫入API密鑰」
 
 unsigned long prevMillis = 0;  // 暫存經過時間（毫秒）
-const long interval = 20000;  // 上傳資料的間隔時間，20秒。
+const long interval = 60000;  // 上傳資料的間隔時間，60秒。
 String msgStr = "";      // 暫存MQTT訊息字串
 
 
