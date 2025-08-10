@@ -694,7 +694,8 @@ st.markdown(f"""為了確保符合已知標準（ASHRAE 55 和 ISO 7730）的熱
 st.image("https://www.simscale.com/wp-content/uploads/2019/09/pmv_ppd-1.png", use_container_width=True)	
 
 # 604 溫溼度熱力圖 END========================================
-#================================================================
+
+#==========VOC and CO2 長期趨勢圖======================================================
 # ---------- 資料抓取函式 ----------
 @st.cache_data(ttl=60)  # 每1分鐘更新一次
 def load_co2_data():
@@ -757,8 +758,74 @@ fig.add_hline(
 st.plotly_chart(fig, use_container_width=True)
 #------------------------------------------------------
 
+# --------PM2.5-- 資料抓取函式 ----------
+@st.cache_data(ttl=60)  # 每1分鐘更新一次
+def load_PM_data():
+    now = datetime.now(timezone(timedelta(hours=8)))
+    start_time = now - timedelta(days=7)
 
+    response = supabase.table("wiolink") \
+        .select("time, name, pm1_0_atm, pm2_5_atm, pm10_atm") \
+        .eq("name", "wiolink window") \
+        .order("time", desc=False) \
+        .execute()
 
+    df = pd.DataFrame(response.data)
+    df["time"] = pd.to_datetime(df["time"])
+    df = df.dropna(subset=["co2eq"])
+    return df
+
+df_pm = load_PM_data()
+
+fig = px.line(
+    data_frame=df_pm,
+    x="time",
+    y="pm1_0_atm",
+    title="604 教室 PM1.0 濃度變化趨勢",
+    labels={"pm1_0_atm": "PM1.0 (µg/ m3)", "time": "時間"},
+    height=500
+)
+st.plotly_chart(fig, use_container_width=True)
+#--------------------------------------------
+fig = px.line(
+    data_frame=df_pm,
+    x="time",
+    y="pm2_5_atm",
+    title="604 教室 PM2.5 濃度變化趨勢",
+    labels={"pm2_5_atm": "PM2.5 (µg/ m3)", "time": "時間"},
+    height=500
+)
+
+# 加上 35 的警戒線（PM2.5為35μg/m3（二十四小時平均））
+fig.add_hline(
+    y=35,
+    line_dash="dash",
+    line_color="red",
+    annotation_text="警戒值：35μg/m3",
+    annotation_position="top left"
+)
+
+st.plotly_chart(fig, use_container_width=True)
+#--------------------------------------------
+fig = px.line(
+    data_frame=df_pm,
+    x="time",
+    y="pm10_atm",
+    title="604 教室 PM10 濃度變化趨勢",
+    labels={"pm10_atm": "PM10 (µg/ m3)", "time": "時間"},
+    height=500
+)
+
+# 加上 75 的警戒線（PM10為75 μg/m3（二十四小時平均））
+fig.add_hline(
+    y=75,
+    line_dash="dash",
+    line_color="red",
+    annotation_text="警戒值：75μg/m3",
+    annotation_position="top left"
+)
+
+st.plotly_chart(fig, use_container_width=True)
 #=========================================================
 # ========== 資料抓取 ==========
 @st.cache_data(ttl=60)  # 每1分鐘更新
