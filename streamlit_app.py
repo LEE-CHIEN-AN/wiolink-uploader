@@ -758,74 +758,90 @@ fig.add_hline(
 st.plotly_chart(fig, use_container_width=True)
 #------------------------------------------------------
 
-# --------PM2.5-- 資料抓取函式 ----------
-@st.cache_data(ttl=60)  # 每1分鐘更新一次
-def load_PM_data():
+# -------- PM 資料抓取與圖表（穩定版） ----------
+@st.cache_data(ttl=60)
+def load_pm_data(table_name="604_pm2.5", device_name="wiolink window", days=7):
+    """從 Supabase 讀 PM1.0/PM2.5/PM10，限制最近 n 天，並做型別清洗"""
     now = datetime.now(timezone(timedelta(hours=8)))
-    start_time = now - timedelta(days=7)
+    start_time = now - timedelta(days=days)
 
-    response = supabase.table("wiolink") \
-        .select("time, name, pm1_0_atm, pm2_5_atm, pm10_atm") \
-        .eq("name", "wiolink window") \
-        .order("time", desc=False) \
-        .execute()
-    
-    df = pd.DataFrame(response.data)
+    # 1) 讀表 + 依裝置名＋時間篩選（如果你的表沒有 name 欄位，就移除 .eq("name", ...)）
+    q = (
+        supabase.table(table_name)
+        .select("time, name, pm1_0_atm, pm2_5_atm, pm10_atm")
+        .order("time", desc=False)
+        .gte("time", start_time.isoformat())
+    )
+    if "name" in supabase.table(table_name).select("name").limit(1).execute().data[0]:
+        q = q.eq("name", device_name)
+
+    resp = q.execute()
+    df = pd.DataFrame(resp.data)
+    if df.empty:
+        return df
+
+    # 2) 時間轉換
     df["time"] = pd.to_datetime(df["time"])
 
+    # 3) 欄位轉數值（避免字串/None）
+    for col in ["pm1_0_atm", "pm2_5_atm", "pm10_atm"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # 4) 去除不合理值（NaN、負值），0 可選擇性過濾（常是感測器掉線）
+    for col in ["pm1_0_atm", "pm2_5_atm", "pm10_atm"]:
+        if col in df.columns:
+            df = df[df[col].notna()]
+            df = df[df[col] >= 0]   # 若 0 是錯誤碼，可用 > 0
+
+    # 5) 依時間排序（保險）
+    df = df.sort_values("time")
     return df
 
-df_pm = load_PM_data()
+# ★ 把表名換成你實際的 PM 表：可能是 "604_pm2.5" 或 "wiolink_pm"；若真的在 "wiolink"，也可填 "wiolink"
+PM_TABLE_NAME = "604_pm2.5"   # <--- TODO：換成你的 Supabase 表名
+df_pm = load_pm_data(table_name=PM_TABLE_NAME, device_name="wiolink window", days=7)
 
-fig = px.line(
-    data_frame=df_pm,
-    x="time",
-    y="pm1_0_atm",
-    title="604 教室 PM1.0 濃度變化趨勢",
-    labels={"pm1_0_atm": "PM1.0 (µg/ m3)", "time": "時間"},
-    height=500
-)
-st.plotly_chart(fig, use_container_width=True)
-#--------------------------------------------
-fig = px.line(
-    data_frame=df_pm,
-    x="time",
-    y="pm2_5_atm",
-    title="604 教室 PM2.5 濃度變化趨勢",
-    labels={"pm2_5_atm": "PM2.5 (µg/ m3)", "time": "時間"},
-    height=500
-)
+# 防呆
+if df_pm.empty:
+    st.warning("PM 資料為空，請確認表名/欄位或時間篩選是否正確。")
+else:
+    # PM1.0
+    fig = px.line(
+        df_pm, x="time", y="pm1_0_atm",
+        title="604 教室 PM1.0 濃度變化趨勢",
+        labels={"pm1_0_atm": "PM1.0 (μg/m³)", "time": "時間"},
+        height=420
+    )
+    fig.update_traces(mode="lines+markers")
+    st.plotly_chart(fig, use_container_width=True)
 
-# 加上 35 的警戒線（PM2.5為35μg/m3（二十四小時平均））
-fig.add_hline(
-    y=35,
-    line_dash="dash",
-    line_color="red",
-    annotation_text="警戒值：35μg/m3",
-    annotation_position="top left"
-)
+    # PM2.5
+    fig = px.line(
+        df_pm, x="time", y="pm2_5_atm",
+        title="604 教室 PM2.5 濃度變化趨勢",
+        labels={"pm2_5_atm": "PM2.5 (μg/m³)", "time": "時間"},
+        height=420
+    )
+    fig.update_traces(mode="lines+markers")
+    fig.add_hline(y=35, line_dash="dash", line_color="red",
+                  annotation_text="警戒值：35 μg/m³（24h平均）",
+                  annotation_position="top left")
+    st.plotly_chart(fig, use_container_width=True)
 
-st.plotly_chart(fig, use_container_width=True)
-#--------------------------------------------
-fig = px.line(
-    data_frame=df_pm,
-    x="time",
-    y="pm10_atm",
-    title="604 教室 PM10 濃度變化趨勢",
-    labels={"pm10_atm": "PM10 (µg/ m3)", "time": "時間"},
-    height=500
-)
+    # PM10
+    fig = px.line(
+        df_pm, x="time", y="pm10_atm",
+        title="604 教室 PM10 濃度變化趨勢",
+        labels={"pm10_atm": "PM10 (μg/m³)", "time": "時間"},
+        height=420
+    )
+    fig.update_traces(mode="lines+markers")
+    fig.add_hline(y=75, line_dash="dash", line_color="red",
+                  annotation_text="警戒值：75 μg/m³（24h平均）",
+                  annotation_position="top left")
+    st.plotly_chart(fig, use_container_width=True)
 
-# 加上 75 的警戒線（PM10為75 μg/m3（二十四小時平均））
-fig.add_hline(
-    y=75,
-    line_dash="dash",
-    line_color="red",
-    annotation_text="警戒值：75μg/m3",
-    annotation_position="top left"
-)
-
-st.plotly_chart(fig, use_container_width=True)
 #=========================================================
 # ========== 資料抓取 ==========
 @st.cache_data(ttl=60)  # 每1分鐘更新
