@@ -41,16 +41,14 @@ def upload_to_postgres(data):
         cursor.execute("""
             INSERT INTO sensor_data (
                 name, humidity, light_intensity,
-                motion_detected, celsius_degree, mag_approach, dust, touch, pm1_0_atm, pm2_5_atm, pm10_atm
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                celsius_degree, mag_approach, touch, pm1_0_atm, pm2_5_atm, pm10_atm
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             data.get("name"),
             data.get("humidity"),
             data.get("light_intensity"),
-            data.get("motion_detected"),
             data.get("celsius_degree"),
             data.get("mag_approach"),
-            data.get("dust"),
             data.get("touch"),
             data.get("pm1_0_atm"),
             data.get("pm2_5_atm"),
@@ -97,7 +95,7 @@ def get_sensor_data(device):
 
 
 # === 抓取 ThingSpeak 最新一筆資料 ===
-def fetch_latest_thingspeak_407():
+def fetch_latest_thingspeak_604aircondition():
     # === ThingSpeak API 設定 ===
     READ_API_KEY = "797QS4ZPIJYT4U7W"
     CHANNEL_ID = "3026055"
@@ -108,13 +106,11 @@ def fetch_latest_thingspeak_407():
 
         feed = response.json()["feeds"][0]
         data = {
-            "name": "407_aircondition",
+            "name": "604_aircondition",
             "humidity": int(feed["field2"]),
             "light_intensity": int(feed["field3"]),
-            "motion_detected": None,
             "celsius_degree": float(feed["field1"]),
             "mag_approach": None,
-            "dust": None,
             "touch": int(feed["field4"]),
             "pm1_0_atm": None,
             "pm2_5_atm": None,
@@ -150,13 +146,11 @@ def fetch_touch_events():
                     continue
                 if int(feed["field4"]) == 1:
                     data = {
-                        "name": "407_aircondition",
+                        "name": "604_aircondition",
                         "humidity": int(feed["field2"]),
                         "light_intensity": int(feed["field3"]),
-                        "motion_detected": None,
                         "celsius_degree": float(feed["field1"]),
                         "mag_approach": None,
-                        "dust": None,
                         "touch": 1,
                         "pm1_0_atm": None,
                         "pm2_5_atm": None,
@@ -249,7 +243,7 @@ if __name__ == "__main__":
     # 上傳最新一筆 604_center
     fetch_latest_thingspeak_604center()
     
-    # 2. 上傳最新一筆 407_aircondition
-    fetch_latest_thingspeak_407()
+    # 2. 上傳最新一筆 604_aircondition
+    fetch_latest_thingspeak_604aircondition()
     # 3. 補上傳 touch=1 資料（過去 5 分鐘內）
     fetch_touch_events()
