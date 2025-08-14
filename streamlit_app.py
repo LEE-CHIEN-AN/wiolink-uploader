@@ -275,6 +275,8 @@ if not df.empty:
 #==================================================================================
 
 # ==================== IAQI 指數計算區塊 ====================
+st.subheader("🌈 604 室內空氣品質（indoor air quality, IAQ）")
+st.markdown(f"📅 最新資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
 # IAQI 分類表（來源：atmotube.com）
 IAQI_BREAKPOINTS = {
@@ -374,8 +376,6 @@ def iaqi_label(score):
     else:
         return "🔴 嚴重污染"
 # ==================== IAQI 五色 Badge 呈現 ====================
-st.subheader("🌈 604 室內空氣品質（indoor air quality, IAQ）")
-st.markdown(f"📅 資料時間：{df['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 # 五色樣式（對應你貼的表格配色）
 st.markdown("""
