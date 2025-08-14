@@ -935,12 +935,10 @@ st.markdown(
 )
 #-------------------------------------------
 st.title("🌱 6樓 戶外感測看板")
-
 import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(layout="wide")
-st.subheader("🌿 6 樓戶外感測看板")
 
 urls = [
     ("室外溫度 (°C)", "https://thingspeak.com/channels/3031639/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line"),
@@ -950,21 +948,25 @@ urls = [
     ("PM10",          "https://thingspeak.com/channels/3031639/charts/5?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"),
 ]
 
-for title, url in urls:
-    st.markdown(f"#### {title}")
-    components.html(
-        f"""
-        <div style="width:100%;max-width:1400px;margin:0;">
-          <iframe
-            src="{url}"
-            style="width:100%; height:420px; border:1px solid #cccccc; display:block;"
-            frameborder="0" scrolling="no">
-          </iframe>
-        </div>
-        """,
-        height=440, width = 800,
-    )
-    st.markdown("")  # 小間距
+# 兩欄顯示
+for i in range(0, len(urls), 2):
+    cols = st.columns(2)
+    for col, idx in zip(cols, range(i, i+2)):
+        if idx < len(urls):
+            title, url = urls[idx]
+            with col:
+                st.markdown(f"#### {title}")
+                components.html(
+                    f"""
+                    <iframe src="{url}"
+                            width="100%" height="260"
+                            style="border: 1px solid #cccccc; display: block;"
+                            frameborder="0">
+                    </iframe>
+                    """,
+                    height=300, width = 500,   # 容器高度 >= iframe 高度
+                )
+
 
 
 #==========VOC and CO2 長期趨勢圖======================================================
