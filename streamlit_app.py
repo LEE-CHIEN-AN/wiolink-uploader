@@ -426,11 +426,11 @@ def iaqi_badge_item(title: str, score: float, detail_text: str):
     st.markdown(html, unsafe_allow_html=True)
 
 # 逐項輸出（右側 detail 可放原始量測，方便對照）
-iaqi_badge_item("TVOC",  iaqi_tvoc,  f"TVOC：{tvoc_val:.3f} ppm",f"等級：{iaqi_label(iaqi_tvoc)}")
-iaqi_badge_item("CO₂",   iaqi_co2,   f"CO₂：{co2_val:.2f} ppm",f"等級：{iaqi_label(iaqi_co2)}")
-iaqi_badge_item("PM1.0", iaqi_pm1,   f"PM1.0：{pm1_val:.2f} μg/m³",f"等級：{iaqi_label(iaqi_pm1)}")
-iaqi_badge_item("PM2.5", iaqi_pm25,  f"PM2.5：{pm25_val:.2f} μg/m³",f"等級：{iaqi_label(iaqi_pm25)}")
-iaqi_badge_item("PM10",  iaqi_pm10,  f"PM10：{pm10_val:.2f} μg/m³",f"等級：{iaqi_label(iaqi_pm10)}")
+iaqi_badge_item("TVOC",  iaqi_tvoc,  f"TVOC：{tvoc_val:.3f} ppm, 等級：{iaqi_label(iaqi_tvoc)}")
+iaqi_badge_item("CO₂",   iaqi_co2,   f"CO₂：{co2_val:.2f} ppm, 等級：{iaqi_label(iaqi_co2)}")
+iaqi_badge_item("PM1.0", iaqi_pm1,   f"PM1.0：{pm1_val:.2f} μg/m³, 等級：{iaqi_label(iaqi_pm1)}")
+iaqi_badge_item("PM2.5", iaqi_pm25,  f"PM2.5：{pm25_val:.2f} μg/m³, 等級：{iaqi_label(iaqi_pm25)}")
+iaqi_badge_item("PM10",  iaqi_pm10,  f"PM10：{pm10_val:.2f} μg/m³, 等級：{iaqi_label(iaqi_pm10)}")
 
 # 綜合 IAQI（取最小值）也用同款顯示
 iaqi_badge_item("綜合 IAQI（取最差）", iaqi_final, f"等級：{iaqi_label(iaqi_final)}")
