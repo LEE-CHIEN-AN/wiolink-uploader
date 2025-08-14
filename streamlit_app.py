@@ -1054,7 +1054,6 @@ st.plotly_chart(fig, use_container_width=True)
 #------------------------------------------------------
 
 # -------- PM 資料抓取與圖表（穩定版） ----------
-@st.cache_data(ttl=60)
 # ========= Supabase 分頁抓取 helper =========
 def fetch_paginated(query_fn, page_size=1000, max_pages=50):
     """
