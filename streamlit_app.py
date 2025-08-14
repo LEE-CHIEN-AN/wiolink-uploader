@@ -248,7 +248,6 @@ def badge(value, limit, label, unit):
       <span class="env-chip">{chip}</span>
       <span>{label}：{lead}</span>
       <span class="env-sub">　|　標準 {limit}</span>
-      <span class="env-sub">　|　統計：{unit}</span>
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
