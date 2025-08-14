@@ -545,7 +545,7 @@ st.markdown(pmv_html, unsafe_allow_html=True)
 ppd_html = f"""
 <div class="pmv-badge {zone_cls}">
   <span class="pmv-chip">PPD</span>
-  <span>不滿意比例：{ppd:.1f}%</span>
+  <span>空間內有 {ppd:.1f}% 的人感到不舒適</span>
   <span class="pmv-line">　|　建議 ≤ 20%</span>
 </div>
 """
