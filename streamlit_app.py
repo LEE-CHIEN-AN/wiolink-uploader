@@ -1055,6 +1055,29 @@ st.plotly_chart(fig, use_container_width=True)
 
 # -------- PM 資料抓取與圖表（穩定版） ----------
 @st.cache_data(ttl=60)
+# ========= Supabase 分頁抓取 helper =========
+def fetch_paginated(query_fn, page_size=1000, max_pages=50):
+    """
+    query_fn(): 回傳一個已串好條件（select/eq/gte/lte/order）的 query builder
+    會自動用 .range 分頁抓取，直到資料抓完或超過 max_pages。
+    """
+    frames = []
+    offset = 0
+    for _ in range(max_pages):
+        q = query_fn().range(offset, offset + page_size - 1)
+        resp = q.execute()
+        rows = resp.data or []
+        if not rows:
+            break
+        frames.append(pd.DataFrame(rows))
+        if len(rows) < page_size:
+            break
+        offset += page_size
+
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+# ---------- PM : 最近 10 天（含分頁抓取） ----------
+@st.cache_data(ttl=60)
 def load_pm_data(days=10):
     from datetime import datetime, timedelta, timezone
     now_utc = datetime.now(timezone.utc)
@@ -1063,27 +1086,37 @@ def load_pm_data(days=10):
     end_iso   = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     cols = ["time", "name", "pm1_0_atm", "pm2_5_atm", "pm10_atm"]
-    resp = (
-        supabase.table("wiolink")
-        .select(",".join(cols))
-        .eq("name", "wiolink window")     # ← 裝置名稱
-        .gte("time", start_iso)
-        .lte("time", end_iso)
-        .order("time", desc=False)
-        .range(0, 5000)                   # ← 超過 1000 筆就會被截斷，這裡拉高上限
-        .execute()
-    )
 
-    df = pd.DataFrame(resp.data)
+    def build_query():
+        # 這裡把條件固定好，每頁只加上 .range
+        return (
+            supabase.table("wiolink")
+            .select(",".join(cols))
+            .eq("name", "wiolink window")   # ← 裝置名稱
+            .gte("time", start_iso)
+            .lte("time", end_iso)
+            .order("time", desc=False)
+        )
+
+    df = fetch_paginated(build_query, page_size=1000, max_pages=50)
+
     if df.empty:
-        return df
+        # 回傳帶欄名的空DF，避免後續圖表找不到欄位
+        return pd.DataFrame(columns=cols)
 
+    # 轉型與清理
     df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert("Asia/Taipei")
     for c in ["pm1_0_atm", "pm2_5_atm", "pm10_atm"]:
         df[c] = pd.to_numeric(df[c], errors="coerce")
 
-    # 只刪掉「三個 PM 全為 NaN」的列；保留任一有值的時間點
-    return df.dropna(subset=["pm1_0_atm", "pm2_5_atm", "pm10_atm"], how="all").sort_values("time")
+    # 僅刪掉「三個 PM 都是 NaN」的列，保留任一有值的時間點
+    df = df.dropna(subset=["pm1_0_atm", "pm2_5_atm", "pm10_atm"], how="all")
+
+    # 如果同一時間戳有重複，保留最後一筆
+    df = df.sort_values("time").drop_duplicates(subset=["time", "name"], keep="last")
+
+    return df
+
 
 df_pm = load_pm_data(days=10)
 
