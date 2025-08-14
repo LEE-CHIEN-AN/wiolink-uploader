@@ -223,7 +223,7 @@ st.markdown("""
             background: rgba(255,255,255,.35); display: inline-block; }
 
 /* 與前面 PMV/IAQI 用色一致：綠 / 黃 / 紅 */
-.env-ok    { background:#baf3e0;  color:#0f3a15; }  /* 正常 */
+.env-ok    { background:#4fb1a1;  color:#0f3a15; }  /* 正常 */
 .env-warn  { background:#ffe08a;  color:#3c2a00; }  /* 接近上限 */
 .env-bad   { background:#ff8b7d;  color:#ffffff; }  /* 超標 */
 .env-sub   { font-weight:600; opacity:.9 }
