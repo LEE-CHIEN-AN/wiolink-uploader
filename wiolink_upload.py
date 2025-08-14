@@ -229,6 +229,107 @@ def fetch_latest_thingspeak_604center():
     except Exception as e:
         print("❌ ThingSpeak 最新資料抓取失敗：", e)
         
+# === 抓取 ThingSpeak 最新一筆資料 ===
+def fetch_latest_thingspeak_604aircondition():
+    # === ThingSpeak API 設定 ===
+    READ_API_KEY = "797QS4ZPIJYT4U7W"
+    CHANNEL_ID = "3026055"
+    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
+    try:
+        response = requests.get(FIELD_URL, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
+        response.raise_for_status()
+
+        feed = response.json()["feeds"][0]
+        data = {
+            "name": "604_aircondition",
+            "humidity": int(feed["field2"]),
+            "light_intensity": int(feed["field3"]),
+            "celsius_degree": float(feed["field1"]),
+            "mag_approach": None,
+            "touch": int(feed["field4"]),
+            "pm1_0_atm": None,
+            "pm2_5_atm": None,
+            "pm10_atm": None
+        }
+
+        upload_to_postgres(data)
+        upload_to_supabase(data)
+
+    except Exception as e:
+        print("❌ ThingSpeak 最新資料抓取失敗：", e)
+        
+        
+
+# === 補抓過去 5 分鐘內 touch == 1 的資料並寫入 PostgreSQL ===
+def fetch_touch_events():
+    READ_API_KEY = "797QS4ZPIJYT4U7W"
+    CHANNEL_ID = "3026055"
+    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
+    try:
+        response = requests.get(FIELD_URL, params={"api_key": READ_API_KEY, "results": 100}, timeout=5)
+        response.raise_for_status()
+        feeds = response.json()["feeds"]
+
+        now = datetime.utcnow()
+        cutoff = now - timedelta(minutes=5)
+        count = 0
+
+        for feed in feeds:
+            try:
+                created_at = datetime.strptime(feed["created_at"], "%Y-%m-%dT%H:%M:%SZ")
+                if created_at < cutoff:
+                    continue
+                if int(feed["field4"]) == 1:
+                    data = {
+                        "name": "604_aircondition",
+                        "humidity": int(feed["field2"]),
+                        "light_intensity": int(feed["field3"]),
+                        "celsius_degree": float(feed["field1"]),
+                        "mag_approach": None,
+                        "touch": 1,
+                        "pm1_0_atm": None,
+                        "pm2_5_atm": None,
+                        "pm10_atm": None
+                    }
+                    upload_to_postgres(data)
+                    count += 1
+            except:
+                continue
+
+        print(f"✅ 共補上傳 {count} 筆 touch=1 的資料")
+    except Exception as e:
+        print("❌ 抓取 ThingSpeak touch=1 資料失敗：", e)
+        
+# === 抓取 ThingSpeak 最新一筆資料 ===
+def fetch_latest_thingspeak_604outdoor():
+    # === ThingSpeak API 設定 ===
+    READ_API_KEY = "GZW95SILPGDZ8LZB"
+    CHANNEL_ID = "3031639"
+    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
+    try:
+        response = requests.get(FIELD_URL, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
+        response.raise_for_status()
+
+        feed = response.json()["feeds"][0]
+        data = {
+            "name": "604_outdoor",
+            "humidity": int(feed["field2"]),
+            "light_intensity": None,
+            "celsius_degree": float(feed["field1"]),
+            "mag_approach": None,
+            "touch": None,
+            "pm1_0_atm": int(feed["field3"]),
+            "pm2_5_atm": int(feed["field4"]),
+            "pm10_atm": int(feed["field5"])
+        }
+
+        upload_to_postgres(data)
+        upload_to_supabase(data)
+
+    except Exception as e:
+        print("❌ ThingSpeak 最新資料抓取失敗：", e)
+        
+
 # === 主程式執行區 ===
 if __name__ == "__main__":
     # 1. 上傳所有 Wio Link 板子資料
@@ -236,12 +337,16 @@ if __name__ == "__main__":
         data = get_sensor_data(device)
         upload_to_supabase(data)
         upload_to_postgres(data)
+        
+    #上傳最新一筆 604_outdoor
+    fetch_latest_thingspeak_604outdoor()
 
     #上傳最新一筆 wiolink window
     fetch_latest_thingspeak_604window()
     
     # 上傳最新一筆 604_center
     fetch_latest_thingspeak_604center()
+    
     
     # 2. 上傳最新一筆 604_aircondition
     fetch_latest_thingspeak_604aircondition()
