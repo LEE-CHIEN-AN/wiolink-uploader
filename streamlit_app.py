@@ -225,7 +225,7 @@ st.markdown("""
 /* 與前面 PMV/IAQI 用色一致：綠 / 黃 / 紅 */
 .env-ok    { background:#4fb1a1;  color:#0f3a15; }  /* 正常 */
 .env-warn  { background:#ffe08a;  color:#3c2a00; }  /* 接近上限 */
-.env-bad   { background:#ff8b7d;  color:#e89292; }  /* 超標 */
+.env-bad   { background:#ff8b7d;  color:#0f3a15; }  /* 超標 */
 .env-sub   { font-weight:600; opacity:.9 }
 </style>
 """, unsafe_allow_html=True)
