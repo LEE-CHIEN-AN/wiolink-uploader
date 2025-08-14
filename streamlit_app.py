@@ -939,33 +939,33 @@ st.title("🌱 6樓 戶外感測看板")
 import streamlit as st
 import streamlit.components.v1 as components
 
-st.set_page_config(layout="wide")   # 建議：全寬版面
+st.set_page_config(layout="wide")
 
 urls = [
-    "https://thingspeak.com/channels/3031639/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line",
-    "https://thingspeak.com/channels/3031639/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
-    "https://thingspeak.com/channels/3031639/charts/3?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
-    "https://thingspeak.com/channels/3031639/charts/4?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
-    "https://thingspeak.com/channels/3031639/charts/5?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
+    ("室外溫度 (°C)", "https://thingspeak.com/channels/3031639/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line"),
+    ("室外濕度 (%)",   "https://thingspeak.com/channels/3031639/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"),
+    ("PM1.0",         "https://thingspeak.com/channels/3031639/charts/3?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"),
+    ("PM2.5",         "https://thingspeak.com/channels/3031639/charts/4?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"),
+    ("PM10",          "https://thingspeak.com/channels/3031639/charts/5?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"),
 ]
 
-# 兩欄排，最後一張自動換行
+# 兩欄顯示
 for i in range(0, len(urls), 2):
-    c1, c2 = st.columns(2)
-    for col, idx in [(c1, i), (c2, i+1)]:
+    cols = st.columns(2)
+    for col, idx in zip(cols, range(i, i+2)):
         if idx < len(urls):
+            title, url = urls[idx]
             with col:
+                st.markdown(f"#### {title}")
                 components.html(
-                    f'''
-                    <iframe
-                        src="{urls[idx]}"
-                        width="100%" height="300"
-                        style="border:1px solid #cccccc; display:block;"
-                        frameborder="0">
+                    f"""
+                    <iframe src="{url}"
+                            width="100%" height="400"
+                            style="border: 1px solid #cccccc; display: block;"
+                            frameborder="0">
                     </iframe>
-                    ''',
-                    height=320,     # ← 一定要比 iframe 高一點，避免裁切
-                    scrolling=True  # ← 多保險；內容超出時可捲動
+                    """,
+                    height=420   # 容器高度 >= iframe 高度
                 )
 
 
