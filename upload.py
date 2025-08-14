@@ -154,7 +154,7 @@ def get_thingspeak_604window_data():
         return None
 
 # === 抓取 ThingSpeak 最新一筆資料 ===
-def fetch_latest_thingspeak_604outdoor_data():
+def get_thingspeak_604outdoor_data():
     # === ThingSpeak API 設定 ===
     READ_API_KEY = "GZW95SILPGDZ8LZB"
     CHANNEL_ID = "3031639"
