@@ -207,17 +207,51 @@ def latest_window_avg(df, col, hours, unit_conv=None):
 
     return float(window.mean())
 
+# ========= 與 IAQI / PMV / PPD 一致的 Badge 風格 =========
+st.markdown("""
+<style>
+.env-badge {
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 8px 0;
+  font-size: 18px;
+  font-weight: 700;
+  border: 1px solid rgba(0,0,0,0.06);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.env-chip { font-weight: 800; padding: 2px 10px; border-radius: 999px;
+            background: rgba(255,255,255,.35); display: inline-block; }
+
+/* 與前面 PMV/IAQI 用色一致：綠 / 黃 / 紅 */
+.env-ok    { background:#8ee69b;  color:#0f3a15; }  /* 正常 */
+.env-warn  { background:#ffe08a;  color:#3c2a00; }  /* 接近上限 */
+.env-bad   { background:#ff6b6b;  color:#ffffff; }  /* 超標 */
+.env-sub   { font-weight:600; opacity:.9 }
+</style>
+""", unsafe_allow_html=True)
+
 def badge(value, limit, label, unit):
+    """以 IAQI/PMV/PPD 同款 badge 呈現 (正常/警告/超標)"""
     if value is None:
         st.info(f"{label}：近 {unit} 無足夠資料。")
         return
 
     if value > limit:
-        st.error(f"⚠️ {label} 超標：{value:.2f}（標準 {limit}）")
+        cls, chip, lead = "env-bad", "⚠️ 超標", f"{value:.2f}"
     elif value > WARN_RATIO * limit:
-        st.warning(f"⚠️ {label} 接近上限：{value:.2f}（標準 {limit}）")
+        cls, chip, lead = "env-warn", "⚠️ 接近上限", f"{value:.2f}"
     else:
-        st.success(f"✅ {label} 正常：{value:.2f}（標準 {limit}）")
+        cls, chip, lead = "env-ok", "✅ 正常", f"{value:.2f}"
+
+    html = f"""
+    <div class="env-badge {cls}">
+      <span class="env-chip">{chip}</span>
+      <span>{label}：{lead}</span>
+      <span class="env-sub">　|　標準 {limit}</span>
+      <span class="env-sub">　|　統計窗：{unit}</span>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 # 假設：
 # df     : 604_air_quality（含 co2eq、total_voc）
