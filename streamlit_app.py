@@ -1054,9 +1054,11 @@ st.plotly_chart(fig, use_container_width=True)
 #------------------------------------------------------
 
 # -------- PM 資料抓取與圖表（穩定版） ----------
-# ---------- PM：最近 10 天 ----------
+# ---------- 資料抓取函式 ----------
+@st.cache_data(ttl=60)  # 每1分鐘更新一次
+# ---------- PM : 最近 10 天 ----------
 @st.cache_data(ttl=60)
-def load_pm_data(table_name="wiolink", device_name="wiolink window", days=10):
+def load_pm_data(days=10):
     from datetime import datetime, timedelta, timezone
     now_utc = datetime.now(timezone.utc)
     start_utc = now_utc - timedelta(days=days)
@@ -1064,9 +1066,9 @@ def load_pm_data(table_name="wiolink", device_name="wiolink window", days=10):
     end_iso   = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     resp = (
-        supabase.table(table_name)
+        supabase.table("wiolink")
         .select("time, name, pm1_0_atm, pm2_5_atm, pm10_atm")
-        .eq("name", device_name)
+        .eq("name", "wiolin window")
         .gte("time", start_iso)   # 最近 10 天（UTC）
         .lte("time", end_iso)
         .order("time", desc=False)
@@ -1076,56 +1078,49 @@ def load_pm_data(table_name="wiolink", device_name="wiolink window", days=10):
     if df.empty:
         return df
 
+    # 轉當地時區顯示（台北）
     df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert("Asia/Taipei")
-    for col in ["pm1_0_atm", "pm2_5_atm", "pm10_atm"]:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-            df = df[df[col].notna()]
-            df = df[df[col] >= 0]  # 若 0 是錯誤碼可改成 > 0
-    return df.sort_values("time")
+    df["pm1_0_atm"] = pd.to_numeric(df["pm1_0_atm"], errors="coerce")
+    df["pm2_5_atm"] = pd.to_numeric(df["pm2_5_atm"], errors="coerce")
+    df["pm10_atm"] = pd.to_numeric(df["pm10_atm"], errors="coerce")
+    return df.dropna(subset=["co2eq"]).sort_values("time")
 
 
-df_pm = load_pm_data(days=10)       # ← 這裡也是 10 天
+# ---------- 畫面與圖表 ----------
 
+df_pm = load_pm_data(days=10)         # ← 這裡就是 10 天
 
-# 防呆
-if df_pm.empty:
-    st.warning("PM 資料為空，請確認表名/欄位或時間篩選是否正確。")
-else:
-    # PM1.0
-    fig = px.line(
-        df_pm, x="time", y="pm1_0_atm",
-        title="604 教室 PM1.0 濃度變化趨勢",
-        labels={"pm1_0_atm": "PM1.0 (μg/m³)", "time": "時間"},
-        height=420
-    )
-    fig.update_traces(mode="lines+markers")
-    st.plotly_chart(fig, use_container_width=True)
+fig = px.line(
+    data_frame= df_pm,
+    x="time",
+    y="pm1_0_atm",
+    title="604 教室 PM1.0 濃度變化趨勢",
+    labels={"pm1_0_atm": "PM1.0 (μg/m³)", "time": "時間"},
+    height=500
+)
 
-    # PM2.5
-    fig = px.line(
-        df_pm, x="time", y="pm2_5_atm",
-        title="604 教室 PM2.5 濃度變化趨勢",
-        labels={"pm2_5_atm": "PM2.5 (μg/m³)", "time": "時間"},
-        height=420
-    )
-    fig.update_traces(mode="lines+markers")
-    fig.add_hline(y=35, line_dash="dash", line_color="red",
-                  annotation_text="警戒值：35 μg/m³（24h平均）",
-                  annotation_position="top left")
-    st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)
+#--------------------------------------------
+fig = px.line(
+    data_frame= df_pm,
+    x="time",
+    y="pm2_5_atm",
+    title="604 教室 PM2.5 濃度變化趨勢",
+    labels={"pm2_5_atm": "PM2.5 (μg/m³)", "time": "時間"},
+    height=500
+)
 
-    # PM10
-    fig = px.line(
-        df_pm, x="time", y="pm10_atm",
-        title="604 教室 PM10 濃度變化趨勢",
-        labels={"pm10_atm": "PM10 (μg/m³)", "time": "時間"},
-        height=420
-    )
-    fig.update_traces(mode="lines+markers")
-    fig.add_hline(y=75, line_dash="dash", line_color="red",
-                  annotation_text="警戒值：75 μg/m³（24h平均）",
-                  annotation_position="top left")
-    st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)
 
+#--------------------------------------------
+fig = px.line(
+    data_frame= df_pm,
+    x="time",
+    y="pm10_atm",
+    title="604 教室 PM10 濃度變化趨勢",
+    labels={"pm10_atm": "PM10 (μg/m³)", "time": "時間"},
+    height=500
+)
+
+st.plotly_chart(fig, use_container_width=True)
 #=========================================================
