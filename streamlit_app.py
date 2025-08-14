@@ -560,7 +560,7 @@ st.markdown(f"""
   - 代謝率 **{met} met**
   - 衣著隔熱 **{clo} clo**（動態修正後 {clo_d:.2f} clo）
 """)
-
+st.image("https://www.simscale.com/wp-content/uploads/2019/09/Artboard-1-1024x320.png", use_container_width=True)	
 #=============================================================================
 
 # 604 溫度熱力圖========================================
