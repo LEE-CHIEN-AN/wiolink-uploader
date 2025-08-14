@@ -176,9 +176,6 @@ def get_thingspeak_604outdoor_data():
             "pm10_atm": int(feed["field5"])
         }
 
-        upload_to_postgres(data)
-        upload_to_supabase(data)
-
     except Exception as e:
         print("❌ ThingSpeak 最新資料抓取失敗：", e)
         
