@@ -975,15 +975,29 @@ plt.tight_layout()
 st.pyplot(fig)
 
 #===========================================
-# HTML iframe 內容
-iframe_html = """
-<iframe width="450" height="260" style="border: 1px solid #cccccc;"
-    src="https://thingspeak.com/channels/3031639/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15">
-</iframe>
-"""
+import streamlit as st
+import streamlit.components.v1 as components
 
-# 在 Streamlit 顯示
-components.html(iframe_html, height=300)
+# 所有 ThingSpeak 圖表 URL
+urls = [
+    "https://thingspeak.com/channels/3031639/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line",
+    "https://thingspeak.com/channels/3031639/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
+    "https://thingspeak.com/channels/3031639/charts/3?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
+    "https://thingspeak.com/channels/3031639/charts/4?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
+    "https://thingspeak.com/channels/3031639/charts/5?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
+]
+
+# 每列顯示 2 張圖
+for i in range(0, len(urls), 2):
+    cols = st.columns(2)
+    for j in range(2):
+        if i + j < len(urls):
+            with cols[j]:
+                components.html(
+                    f'<iframe width="100%" height="260" style="border:1px solid #cccccc;" src="{urls[i+j]}"></iframe>',
+                    height=280
+                )
+
 
 #==========VOC and CO2 長期趨勢圖======================================================
 # ---------- 資料抓取函式 ----------
