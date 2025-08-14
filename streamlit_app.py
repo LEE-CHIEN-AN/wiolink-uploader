@@ -90,7 +90,7 @@ if window_state_val in [1, True]:
 else:
     window_status = "Open"
     
-st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
+st.caption(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
 
 # 以 HTML + CSS 呈現卡片
 st.markdown(
@@ -276,7 +276,7 @@ if not df.empty:
 
 # ==================== IAQI 指數計算區塊 ====================
 st.subheader("🌈 604 室內空氣品質（indoor air quality, IAQ）")
-st.markdown(f"📅 最新資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+st.caption(f"📅 最新資料時間：{latest_time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
 
 # IAQI 分類表（來源：atmotube.com）
 IAQI_BREAKPOINTS = {
