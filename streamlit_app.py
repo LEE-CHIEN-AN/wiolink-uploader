@@ -225,7 +225,7 @@ st.markdown("""
 /* 與前面 PMV/IAQI 用色一致：綠 / 黃 / 紅 */
 .env-ok    { background:#ADFF9D;  color:#0f3a15; }  /* 正常 */
 .env-warn  { background:#FDFFB6;  color:#3c2a00; }  /* 接近上限 */
-.env-bad   { background:#FF7070;  color:#7A0000; }  /* 超標 */
+.env-bad   { background:#ff6b6b; color:#fff; }  /* 超標 */
 .env-sub   { font-weight:600; opacity:.9 }
 </style>
 """, unsafe_allow_html=True)
@@ -393,7 +393,7 @@ st.markdown("""
 .iaqi-moderate   { background:#ADFF9D;  color:#0f3a15; }  /* olive Moderate 61–80 */
 .iaqi-polluted   { background:#fdffb6;  color:#3c2a00;}  /* orange Polluted 41–60 */
 .iaqi-very       { background:#FF920E;  color:#3c1200; }  /* red-orange Very Polluted 21–40 */
-.iaqi-severe     { background:#FF7070;  color:#7A0000; }  /* deep magenta Severe 0–20 */
+.iaqi-severe     { background:#ff6b6b; color:#fff; }  /* deep magenta Severe 0–20 */
 .iaqi-chip {
   font-weight: 800; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.35);
   margin-right: 8px; display: inline-block;
