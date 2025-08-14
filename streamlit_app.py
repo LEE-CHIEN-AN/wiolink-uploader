@@ -951,7 +951,7 @@ urls = [
 
 # 兩欄顯示
 for i in range(0, len(urls), 2):
-    cols = st.columns(2)
+    cols = st.container()
     for col, idx in zip(cols, range(i, i+2)):
         if idx < len(urls):
             title, url = urls[idx]
