@@ -827,25 +827,39 @@ st.pyplot(fig)
 #==========VOC and CO2 長期趨勢圖======================================================
 # ---------- 資料抓取函式 ----------
 @st.cache_data(ttl=60)  # 每1分鐘更新一次
-def load_co2_data():
-    now = datetime.now(timezone(timedelta(hours=8)))
-    start_time = now - timedelta(days=7)
+# ---------- CO2 & VOC：最近 10 天 ----------
+@st.cache_data(ttl=60)
+def load_co2_data(days=10):
+    from datetime import datetime, timedelta, timezone
+    now_utc = datetime.now(timezone.utc)
+    start_utc = now_utc - timedelta(days=days)
+    start_iso = start_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    end_iso   = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    response = supabase.table("wiolink") \
-        .select("time, name, co2eq,total_voc") \
-        .eq("name", "604_air_quality") \
-        .order("time", desc=False) \
+    resp = (
+        supabase.table("wiolink")
+        .select("time, name, co2eq, total_voc")
+        .eq("name", "604_air_quality")
+        .gte("time", start_iso)   # 最近 10 天（UTC）
+        .lte("time", end_iso)
+        .order("time", desc=False)
         .execute()
+    )
+    df = pd.DataFrame(resp.data)
+    if df.empty:
+        return df
 
-    df = pd.DataFrame(response.data)
-    df["time"] = pd.to_datetime(df["time"])
-    df = df.dropna(subset=["co2eq"])
-    return df
+    # 轉當地時區顯示（台北）
+    df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert("Asia/Taipei")
+    df["co2eq"] = pd.to_numeric(df["co2eq"], errors="coerce")
+    df["total_voc"] = pd.to_numeric(df["total_voc"], errors="coerce")
+    return df.dropna(subset=["co2eq"]).sort_values("time")
+
 
 # ---------- 畫面與圖表 ----------
 st.title("🌿 604 長期趨勢圖")
 
-df = load_co2_data()
+df = load_co2_data(days=10)         # ← 這裡就是 10 天
 
 fig = px.line(
     data_frame=df,
@@ -888,48 +902,42 @@ st.plotly_chart(fig, use_container_width=True)
 #------------------------------------------------------
 
 # -------- PM 資料抓取與圖表（穩定版） ----------
+# ---------- PM：最近 10 天 ----------
 @st.cache_data(ttl=60)
-def load_pm_data(table_name="604_pm2.5", device_name="wiolink window", days=7):
-    """從 Supabase 讀 PM1.0/PM2.5/PM10，限制最近 n 天，並做型別清洗"""
-    now = datetime.now(timezone(timedelta(hours=8)))
-    start_time = now - timedelta(days=days)
+def load_pm_data(table_name="wiolink", device_name="wiolink window", days=10):
+    from datetime import datetime, timedelta, timezone
+    now_utc = datetime.now(timezone.utc)
+    start_utc = now_utc - timedelta(days=days)
+    start_iso = start_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    end_iso   = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    # 1) 讀表 + 依裝置名＋時間篩選（如果你的表沒有 name 欄位，就移除 .eq("name", ...)）
-    q = (
+    resp = (
         supabase.table(table_name)
         .select("time, name, pm1_0_atm, pm2_5_atm, pm10_atm")
+        .eq("name", device_name)
+        .gte("time", start_iso)   # 最近 10 天（UTC）
+        .lte("time", end_iso)
         .order("time", desc=False)
-        .gte("time", start_time.isoformat())
+        .execute()
     )
-    if "name" in supabase.table(table_name).select("name").limit(1).execute().data[0]:
-        q = q.eq("name", device_name)
-
-    resp = q.execute()
     df = pd.DataFrame(resp.data)
     if df.empty:
         return df
 
-    # 2) 時間轉換
-    df["time"] = pd.to_datetime(df["time"])
-
-    # 3) 欄位轉數值（避免字串/None）
+    df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert("Asia/Taipei")
     for col in ["pm1_0_atm", "pm2_5_atm", "pm10_atm"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
-
-    # 4) 去除不合理值（NaN、負值），0 可選擇性過濾（常是感測器掉線）
-    for col in ["pm1_0_atm", "pm2_5_atm", "pm10_atm"]:
-        if col in df.columns:
             df = df[df[col].notna()]
-            df = df[df[col] >= 0]   # 若 0 是錯誤碼，可用 > 0
+            df = df[df[col] >= 0]  # 若 0 是錯誤碼可改成 > 0
+    return df.sort_values("time")
 
-    # 5) 依時間排序（保險）
-    df = df.sort_values("time")
-    return df
 
 # ★ 把表名換成你實際的 PM 表：可能是 "604_pm2.5" 或 "wiolink_pm"；若真的在 "wiolink"，也可填 "wiolink"
 PM_TABLE_NAME = "wiolink"   # <--- TODO：換成你的 Supabase 表名
-df_pm = load_pm_data(table_name=PM_TABLE_NAME, device_name="wiolink window", days=7)
+
+df_pm = load_pm_data(days=10)       # ← 這裡也是 10 天
+
 
 # 防呆
 if df_pm.empty:
