@@ -325,6 +325,20 @@ iaqi_pm10 = calculate_iaqi(pm10_val, IAQI_BREAKPOINTS["pm10_atm"])
 # 最終 IAQI：取最小值（代表最差）
 iaqi_final = min(filter(None, [iaqi_co2, iaqi_tvoc, iaqi_pm1, iaqi_pm25, iaqi_pm10]))
 
+# 分類文字
+def iaqi_label(score):
+    if score is None:
+        return "❓ 未定義"
+    if score >= 81:
+        return "🔵 良好"
+    elif score >= 61:
+        return "🟢 普通"
+    elif score >= 41:
+        return "🟡 輕度污染"
+    elif score >= 21:
+        return "🟠 中度污染"
+    else:
+        return "🔴 嚴重污染"
 # ==================== IAQI 五色 Badge 呈現 ====================
 st.subheader("🌈 室內空氣品質 IAQI 指數（Badge 版）")
 
