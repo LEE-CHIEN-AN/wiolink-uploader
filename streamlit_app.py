@@ -1083,7 +1083,7 @@ def load_pm_data(days=10):
     df["pm1_0_atm"] = pd.to_numeric(df["pm1_0_atm"], errors="coerce")
     df["pm2_5_atm"] = pd.to_numeric(df["pm2_5_atm"], errors="coerce")
     df["pm10_atm"] = pd.to_numeric(df["pm10_atm"], errors="coerce")
-    return df.dropna(subset=["co2eq"]).sort_values("time")
+    return df.dropna(subset=["pm1_0_atm"]).sort_values("time")
 
 
 # ---------- 畫面與圖表 ----------
