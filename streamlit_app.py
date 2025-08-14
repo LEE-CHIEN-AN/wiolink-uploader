@@ -389,7 +389,7 @@ st.markdown("""
   color: #111827;
   border: 1px solid rgba(0,0,0,0.06);
 }
-.iaqi-good       { background:#326199; }  /* teal-ish Good 81–100 */
+.iaqi-good       { background:#01b4bc; }  /* teal-ish Good 81–100 */
 .iaqi-moderate   { background:#4fb1a1; }  /* olive Moderate 61–80 */
 .iaqi-polluted   { background:#ffc055; }  /* orange Polluted 41–60 */
 .iaqi-very       { background:#eb8d50; }  /* red-orange Very Polluted 21–40 */
