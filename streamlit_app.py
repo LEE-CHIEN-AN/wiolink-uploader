@@ -949,9 +949,9 @@ urls = [
 ]
 
 # 每列顯示 2 張圖
-for i in range(0, len(urls), 2):
-    cols = st.columns(2)
-    for j in range(2):
+for i in range(0, len(urls), 1):
+    cols = st.columns(1)
+    for j in range(1):
         if i + j < len(urls):
             with cols[j]:
                 components.html(
