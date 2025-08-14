@@ -209,6 +209,6 @@ if __name__ == "__main__":
         upload_to_supabase(vlabwindow_data)
         
     # 上傳 ThingSpeak 604_outdoor 資料
-    vlaboutdoor_data = get_thingspeak_604outdoor_data()
-    if vlaboutdoor_data:
-        upload_to_supabase(vlaboutdoor_data)
+    # vlaboutdoor_data = get_thingspeak_604outdoor_data()
+    # if vlaboutdoor_data:
+        # upload_to_supabase(vlaboutdoor_data)
