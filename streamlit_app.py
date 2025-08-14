@@ -445,20 +445,87 @@ def comfort_label(pmv_val):
 
 hot_comfort_label = comfort_label(pmv)
 
-# 顯示結果
-st.subheader("🌡️ 熱舒適度評估 (PMV/PPD)")
+# ==================== PMV/PPD：Badge 風格 ====================
+st.subheader("🌡️ 熱舒適度評估（PMV / PPD）")
+
+# --- CSS：七色分級，配合你貼圖的漸層 ---
+st.markdown("""
+<style>
+.pmv-badge {
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 8px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  border: 1px solid rgba(0,0,0,0.06);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.pmv-chip { font-weight: 800; padding: 2px 10px; border-radius: 999px;
+            background: rgba(255,255,255,.35); display: inline-block; }
+
+.pmv-cold3   { background:#1e90ff; color:#fff;}    /* COLD  ≤ -2.5 深藍 */
+.pmv-cold2   { background:#4da6ff; color:#fff;}    /* COOL  (-2.5,-1.5] 藍 */
+.pmv-cold1   { background:#7fd3ff; color:#0b2a3f;} /* SLIGHTLY COOL (-1.5,-0.5] 淺藍青 */
+.pmv-neutral { background:#8ee69b; color:#0f3a15;} /* NEUTRAL (-0.5,0.5] 綠 */
+.pmv-warm1   { background:#ffe08a; color:#3c2a00;} /* SLIGHTLY WARM (0.5,1.5] 黃 */
+.pmv-warm2   { background:#ffb36a; color:#3c1200;} /* WARM (1.5,2.5] 橘 */
+.pmv-hot3    { background:#ff6b6b; color:#fff;}    /* HOT   > 2.5 紅 */
+
+.pmv-line { font-weight:600; opacity:.9 }
+</style>
+""", unsafe_allow_html=True)
+
+# --- 區間與標籤 ---
+def pmv_bucket(pmv_val: float):
+    # 依 ASHRAE 熱感七段
+    if pmv_val <= -2.5:
+        return "COLD", "🥶", "pmv-cold3"
+    elif pmv_val <= -1.5:
+        return "COOL", "❄️", "pmv-cold2"
+    elif pmv_val <= -0.5:
+        return "SLIGHTLY COOL", "🧊", "pmv-cold1"
+    elif pmv_val <= 0.5:
+        return "NEUTRAL", "😊", "pmv-neutral"
+    elif pmv_val <= 1.5:
+        return "SLIGHTLY WARM", "🌤️", "pmv-warm1"
+    elif pmv_val <= 2.5:
+        return "WARM", "🌞", "pmv-warm2"
+    else:
+        return "HOT", "🥵", "pmv-hot3"
+
+zone_label, zone_emoji, zone_cls = pmv_bucket(float(pmv))
+
+# --- 主要 PMV badge（彩色） ---
+pmv_html = f"""
+<div class="pmv-badge {zone_cls}">
+  <span class="pmv-chip">{zone_emoji} {zone_label}</span>
+  <span>PMV：{pmv:.2f}</span>
+  <span class="pmv-line">　|　建議範圍 −0.5 ~ +0.5</span>
+</div>
+"""
+st.markdown(pmv_html, unsafe_allow_html=True)
+
+# --- PPD 補充 badge（同色系，方便一眼看狀態）---
+ppd_html = f"""
+<div class="pmv-badge {zone_cls}">
+  <span class="pmv-chip">PPD</span>
+  <span>不滿意比例：{ppd:.1f}%</span>
+  <span class="pmv-line">　|　建議 ≤ 20%</span>
+</div>
+"""
+st.markdown(ppd_html, unsafe_allow_html=True)
+
+# --- 參數說明（維持中性文字，不上色） ---
 st.markdown(f"""
-- **PMV 指數**：{pmv:.2f}  （ 建議範圍：-0.5 ~ +0.5 ） 
-- **熱感分類 Thermal sensation**：{hot_comfort_label}
-- **PPD 不滿意比例**：{ppd:.1f}% (約有 {ppd:.1f}% 人感到熱不適) ( 建議範圍： ≤ 20% )
-- 參數使用：
-    - 操作溫度 Operative temperature：{ta} °C
-    - 相對濕度 Relative humidity：{rh:.0f} %
-    - 氣流速度 Air speed：{v} m/s
-    - 代謝率 Metabolic rate：{met} met (Typing : 坐著用電腦打字、文書工作)
-    - 衣著隔熱 Clothing level：{clo} clo (夏季短袖長褲)
+- 參數：
+  - 操作溫度 **{ta:.1f} °C**（假設 $T_r = T_a$）
+  - 相對濕度 **{rh:.0f}%**
+  - 氣流速度 **{v} m/s**（動態修正 $v_r={v_r:.2f}$）
+  - 代謝率 **{met} met**
+  - 衣著隔熱 **{clo} clo**（動態修正後 {clo_d:.2f} clo）
 """)
-st.image("https://www.simscale.com/wp-content/uploads/2019/09/pmv_ppd-1.png", use_container_width=True)	
+
 #=============================================================================
 
 # 604 溫度熱力圖========================================
