@@ -317,7 +317,7 @@ pm10_val = df_pm["pm10_atm"].iloc[-1]
 # 各項 IAQI
 iaqi_co2 = calculate_iaqi(co2_val, IAQI_BREAKPOINTS["co2eq"])
 iaqi_tvoc = calculate_iaqi_tvoc_simple(tvoc_val)
-iaqi_pm1 = calculate_iaqi(pm10_val, IAQI_BREAKPOINTS["pm1_0_atm"])
+iaqi_pm1 = calculate_iaqi(pm1_val, IAQI_BREAKPOINTS["pm1_0_atm"])
 iaqi_pm25 = calculate_iaqi(pm25_val, IAQI_BREAKPOINTS["pm2_5_atm"])
 iaqi_pm10 = calculate_iaqi(pm10_val, IAQI_BREAKPOINTS["pm10_atm"])
 
@@ -325,34 +325,67 @@ iaqi_pm10 = calculate_iaqi(pm10_val, IAQI_BREAKPOINTS["pm10_atm"])
 # 最終 IAQI：取最小值（代表最差）
 iaqi_final = min(filter(None, [iaqi_co2, iaqi_tvoc, iaqi_pm1, iaqi_pm25, iaqi_pm10]))
 
-# 分類文字
-def iaqi_label(score):
-    if score is None:
-        return "❓ 未定義"
-    if score >= 81:
-        return "🔵 良好"
-    elif score >= 61:
-        return "🟢 普通"
-    elif score >= 41:
-        return "🟡 輕度污染"
-    elif score >= 21:
-        return "🟠 中度污染"
-    else:
-        return "🔴 嚴重污染"
+# ==================== IAQI 五色 Badge 呈現 ====================
+st.subheader("🌈 室內空氣品質 IAQI 指數（Badge 版）")
 
-# 顯示 IAQI 結果
-st.subheader("🌈 室內空氣品質 IAQI 指數")
-st.markdown(f"""
-- tVOC IAQ : {iaqi_label(iaqi_tvoc)} , tVOC : {tvoc_val}
-- CO2 IAQI : {iaqi_co2:.1f} , {iaqi_label(iaqi_co2)} , CO2 : {co2_val}
-- PM1.0 IAQI : {iaqi_pm1:.1f} , {iaqi_label(iaqi_pm1)} , PM2.5 : {pm1_val}
-- PM2.5 IAQI : {iaqi_pm25:.1f} , {iaqi_label(iaqi_pm25)} , PM2.5 : {pm25_val}
-- PM10 IAQI : {iaqi_pm10:.1f} , {iaqi_label(iaqi_pm10)} , PM10 : {pm10_val}
-- **綜合IAQI 分數：** {iaqi_final:.1f}
-- **等級分類：** {iaqi_label(iaqi_final)}
-""")
-st.image("https://cdn.prod.website-files.com/5f23e100544c90c140f34325/67ae00f27393a15e23104e7d_6284b21bc2130b8160d3cac5_25.jpeg", use_container_width=True)
-st.image("https://cdn.prod.website-files.com/5f23e100544c90c140f34325/68948e3f0fe25227203a2692_IAQI.png", use_container_width=True)
+# 五色樣式（對應你貼的表格配色）
+st.markdown("""
+<style>
+.iaqi-badge {
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.iaqi-good       { background:#baf3e0; }  /* teal-ish Good 81–100 */
+.iaqi-moderate   { background:#c8d17b; }  /* olive Moderate 61–80 */
+.iaqi-polluted   { background:#ffc480; }  /* orange Polluted 41–60 */
+.iaqi-very       { background:#ff8b7d; }  /* red-orange Very Polluted 21–40 */
+.iaqi-severe     { background:#d94470; color: #fff; }  /* deep magenta Severe 0–20 */
+.iaqi-chip {
+  font-weight: 800; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.35);
+  margin-right: 8px; display: inline-block;
+}
+.iaqi-detail { font-weight: 500; opacity:.9 }
+</style>
+""", unsafe_allow_html=True)
+
+def iaqi_bucket(score: float):
+    """回傳 (label, css_class) 依 IAQI 區間"""
+    if score is None:
+        return ("Undefined", "iaqi-moderate")  # 安全預設
+    s = float(score)
+    if 81 <= s <= 100:  return ("Good",            "iaqi-good")
+    if 61 <= s <= 80:   return ("Moderate",        "iaqi-moderate")
+    if 41 <= s <= 60:   return ("Polluted",        "iaqi-polluted")
+    if 21 <= s <= 40:   return ("Very Polluted",   "iaqi-very")
+    return ("Severely Polluted", "iaqi-severe")
+
+def iaqi_badge_item(title: str, score: float, detail_text: str):
+    label, css = iaqi_bucket(score)
+    score_txt = "--" if score is None else f"{score:.1f}"
+    html = f"""
+    <div class="iaqi-badge {css}">
+      <span class="iaqi-chip">{label}</span>
+      <span>{title}：IAQI {score_txt}</span>
+      <span class="iaqi-detail">　|　{detail_text}</span>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+# 逐項輸出（右側 detail 可放原始量測，方便對照）
+iaqi_badge_item("TVOC",  iaqi_tvoc,  f"TVOC：{tvoc_val:.3f} ppm")
+iaqi_badge_item("CO₂",   iaqi_co2,   f"CO₂：{co2_val:.2f} ppm")
+iaqi_badge_item("PM1.0", iaqi_pm1,   f"PM1.0：{pm1_val:.2f} μg/m³")
+iaqi_badge_item("PM2.5", iaqi_pm25,  f"PM2.5：{pm25_val:.2f} μg/m³")
+iaqi_badge_item("PM10",  iaqi_pm10,  f"PM10：{pm10_val:.2f} μg/m³")
+
+# 綜合 IAQI（取最小值）也用同款顯示
+iaqi_badge_item("綜合 IAQI（取最差）", iaqi_final, f"等級：{iaqi_label(iaqi_final)}")
+
 
 # 熱舒適度 =============================================================================
 # 以下程式碼為新增區塊：根據用戶環境使用 pythermalcomfort 套件計算熱舒適度 PMV 與 PPD
