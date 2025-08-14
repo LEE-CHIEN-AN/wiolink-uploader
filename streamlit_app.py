@@ -502,7 +502,7 @@ st.markdown("""
 .pmv-cold3   { background:#1e90ff; color:#fff;}    /* COLD  ≤ -2.5 深藍 */
 .pmv-cold2   { background:#4da6ff; color:#fff;}    /* COOL  (-2.5,-1.5] 藍 */
 .pmv-cold1   { background:#7fd3ff; color:#0b2a3f;} /* SLIGHTLY COOL (-1.5,-0.5] 淺藍青 */
-.pmv-neutral { background:#8ee69b; color:#0f3a15;} /* NEUTRAL (-0.5,0.5] 綠 */
+.pmv-neutral { background:#8ee69b; color:#baf3e0;} /* NEUTRAL (-0.5,0.5] 綠 */
 .pmv-warm1   { background:#ffe08a; color:#3c2a00;} /* SLIGHTLY WARM (0.5,1.5] 黃 */
 .pmv-warm2   { background:#ffb36a; color:#3c1200;} /* WARM (1.5,2.5] 橘 */
 .pmv-hot3    { background:#ff6b6b; color:#fff;}    /* HOT   > 2.5 紅 */
