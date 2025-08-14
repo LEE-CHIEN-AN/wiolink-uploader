@@ -961,7 +961,8 @@ for title, url in urls:
             frameborder="0" scrolling="no">
           </iframe>
         </div>
-        """
+        """,
+        height=440, width = 800,
     )
     st.markdown("")  # 小間距
 
