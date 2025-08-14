@@ -933,13 +933,14 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
+#-------------------------------------------
 st.title("🌱 6樓 戶外感測看板")
 
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 所有 ThingSpeak 圖表 URL
+st.set_page_config(layout="wide")   # 建議：全寬版面
+
 urls = [
     "https://thingspeak.com/channels/3031639/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line",
     "https://thingspeak.com/channels/3031639/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
@@ -948,14 +949,23 @@ urls = [
     "https://thingspeak.com/channels/3031639/charts/5?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15",
 ]
 
-# 每列顯示 2 張圖
-for i in range(0, len(urls), 1):
-    cols = st.columns(1)
-    for j in range(1):
-        if i + j < len(urls):
-            with cols[j]:
+# 兩欄排，最後一張自動換行
+for i in range(0, len(urls), 2):
+    c1, c2 = st.columns(2)
+    for col, idx in [(c1, i), (c2, i+1)]:
+        if idx < len(urls):
+            with col:
                 components.html(
-                    f'<iframe width="450" height="260" style="border:1px solid #cccccc;" src="{urls[i+j]}"></iframe>',
+                    f'''
+                    <iframe
+                        src="{urls[idx]}"
+                        width="100%" height="300"
+                        style="border:1px solid #cccccc; display:block;"
+                        frameborder="0">
+                    </iframe>
+                    ''',
+                    height=320,     # ← 一定要比 iframe 高一點，避免裁切
+                    scrolling=True  # ← 多保險；內容超出時可捲動
                 )
 
 
