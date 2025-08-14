@@ -695,6 +695,135 @@ st.image("https://www.simscale.com/wp-content/uploads/2019/09/pmv_ppd-1.png", us
 
 # 604 溫溼度熱力圖 END========================================
 
+#=========================================================
+# ========== 資料抓取 ==========
+@st.cache_data(ttl=60)  # 每1分鐘更新
+def load_data_outdoor():
+    now = datetime.now(timezone(timedelta(hours=8)))
+    start_time = now - timedelta(hours=24)
+
+    response = supabase.table("wiolink") \
+        .select("time, name, celsius_degree, humidity, pm1_0_atm, pm2_5_atm,  pm10_atm") \
+        .eq("name", "604_outdoor") \
+        .gte("time", start_time.isoformat()) \
+        .order("time", desc=False) \
+        .execute()
+
+    df = pd.DataFrame(response.data)
+    df["time"] = pd.to_datetime(df["time"])
+    return df.dropna()
+
+df_outdoor = load_data_outdoor()
+
+st.title("🌱 6樓 戶外空氣品質即時概況")
+
+# 取最後一筆資料
+latest = df_outdoor.iloc[-1]
+st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
+
+# 即時數據卡片呈現
+st.markdown(
+    f"""
+    <style>
+    .card-container {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }}
+    .card {{
+        padding: 20px;
+        border-radius: 15px;
+        width: 160px;
+        color: white;
+        text-align: center;
+        font-family: 'Noto Sans CJK TC', sans-serif;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }}
+    .red {{ background-color: #e53935; }}
+    .pink {{ background-color: #d81b60; }}
+    .purple {{ background-color: #8e24aa; }}
+    .yellow {{ background-color: #FFC107; color: black; }}
+    .blue {{ background-color: #2196F3; }}
+    .value {{
+        font-size: 32px;
+        font-weight: bold;
+    }}
+    .label {{
+        font-size: 18px;
+        margin-top: 5px;
+    }}
+    </style>
+
+    <div class="card-container">
+        <div class="card red">
+            <div class="label">PM1.0</div>
+            <div class="value">{latest["pm1_0_atm"]} μg/m³</div>
+        </div>
+        <div class="card pink">
+            <div class="label">PM2.5</div>
+            <div class="value">{latest["pm2_5_atm"]} μg/m³</div>
+        </div>
+        <div class="card purple">
+            <div class="label">PM10</div>
+            <div class="value">{latest["pm10_atm"]} μg/m³</div>
+        </div>
+        <div class="card yellow">
+            <div class="label">Temp</div>
+            <div class="value">{latest["celsius_degree"]:.1f}°C</div>
+        </div>
+        <div class="card blue">
+            <div class="label">Humidity</div>
+            <div class="value">{latest["humidity"]:.0f}%</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.title("🌱 6樓 戶外感測看板")
+
+fig, axs = plt.subplots(2, 3, figsize=(18, 10))
+
+# PM1.0
+axs[0, 0].plot(df_outdoor["time"], df_outdoor["pm1_0_atm"], marker='o', color='red')
+axs[0, 0].set_title("PM1.0")
+axs[0, 0].set_ylabel("μg/m³")
+axs[0, 0].tick_params(axis='x', rotation=45)
+
+# PM2.5
+axs[0, 1].plot(df_outdoor["time"], df_outdoor["pm2_5_atm"], marker='o', color='pink')
+axs[0, 1].set_title("PM2.5")
+axs[0, 1].set_ylabel("μg/m³")
+axs[0, 1].tick_params(axis='x', rotation=45)
+
+# PM10
+axs[0, 2].plot(df_outdoor["time"], df_outdoor["pm10_atm"], marker='o', color='purple')
+axs[0, 2].set_title("PM10")
+axs[0, 2].set_ylabel("μg/m³")
+axs[0, 2].tick_params(axis='x', rotation=45)
+
+# Temperature
+axs[1, 0].plot(df_outdoor["time"], df_outdoor["celsius_degree"], marker='o', color='gold')
+axs[1, 0].set_title("Temperature")
+axs[1, 0].set_ylabel("°C")
+axs[1, 0].tick_params(axis='x', rotation=45)
+
+# Humidity
+axs[1, 1].plot(df_outdoor["time"], df_outdoor["humidity"], marker='o', color='blue')
+axs[1, 1].set_title("Humidity")
+axs[1, 1].set_ylabel("%")
+axs[1, 1].tick_params(axis='x', rotation=45)
+
+# Empty (可放置其他指標或隱藏)
+axs[1, 2].axis('off')
+
+plt.tight_layout()
+st.pyplot(fig)
+
+#===========================================
+
+
 #==========VOC and CO2 長期趨勢圖======================================================
 # ---------- 資料抓取函式 ----------
 @st.cache_data(ttl=60)  # 每1分鐘更新一次
@@ -843,130 +972,3 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
-#=========================================================
-# ========== 資料抓取 ==========
-@st.cache_data(ttl=60)  # 每1分鐘更新
-def load_data_outdoor():
-    now = datetime.now(timezone(timedelta(hours=8)))
-    start_time = now - timedelta(hours=24)
-
-    response = supabase.table("wiolink") \
-        .select("time, name, celsius_degree, humidity, pm1_0_atm, pm2_5_atm,  pm10_atm") \
-        .eq("name", "604_outdoor") \
-        .gte("time", start_time.isoformat()) \
-        .order("time", desc=False) \
-        .execute()
-
-    df = pd.DataFrame(response.data)
-    df["time"] = pd.to_datetime(df["time"])
-    return df.dropna()
-
-df_outdoor = load_data_outdoor()
-
-st.title("🌱 6樓 戶外空氣品質即時概況")
-
-# 取最後一筆資料
-latest = df_outdoor.iloc[-1]
-st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
-
-# 即時數據卡片呈現
-st.markdown(
-    f"""
-    <style>
-    .card-container {{
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        justify-content: center;
-    }}
-    .card {{
-        padding: 20px;
-        border-radius: 15px;
-        width: 160px;
-        color: white;
-        text-align: center;
-        font-family: 'Noto Sans CJK TC', sans-serif;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }}
-    .red {{ background-color: #e53935; }}
-    .pink {{ background-color: #d81b60; }}
-    .purple {{ background-color: #8e24aa; }}
-    .yellow {{ background-color: #FFC107; color: black; }}
-    .blue {{ background-color: #2196F3; }}
-    .value {{
-        font-size: 32px;
-        font-weight: bold;
-    }}
-    .label {{
-        font-size: 18px;
-        margin-top: 5px;
-    }}
-    </style>
-
-    <div class="card-container">
-        <div class="card red">
-            <div class="label">PM1.0</div>
-            <div class="value">{latest["pm1_0_atm"]} μg/m³</div>
-        </div>
-        <div class="card pink">
-            <div class="label">PM2.5</div>
-            <div class="value">{latest["pm2_5_atm"]} μg/m³</div>
-        </div>
-        <div class="card purple">
-            <div class="label">PM10</div>
-            <div class="value">{latest["pm10_atm"]} μg/m³</div>
-        </div>
-        <div class="card yellow">
-            <div class="label">Temp</div>
-            <div class="value">{latest["celsius_degree"]:.1f}°C</div>
-        </div>
-        <div class="card blue">
-            <div class="label">Humidity</div>
-            <div class="value">{latest["humidity"]:.0f}%</div>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.title("🌱 6樓 戶外感測看板")
-
-fig, axs = plt.subplots(2, 3, figsize=(18, 10))
-
-# PM1.0
-axs[0, 0].plot(df_outdoor["time"], df_outdoor["pm1_0_atm"], marker='o', color='red')
-axs[0, 0].set_title("PM1.0")
-axs[0, 0].set_ylabel("μg/m³")
-axs[0, 0].tick_params(axis='x', rotation=45)
-
-# PM2.5
-axs[0, 1].plot(df_outdoor["time"], df_outdoor["pm2_5_atm"], marker='o', color='pink')
-axs[0, 1].set_title("PM2.5")
-axs[0, 1].set_ylabel("μg/m³")
-axs[0, 1].tick_params(axis='x', rotation=45)
-
-# PM10
-axs[0, 2].plot(df_outdoor["time"], df_outdoor["pm10_atm"], marker='o', color='purple')
-axs[0, 2].set_title("PM10")
-axs[0, 2].set_ylabel("μg/m³")
-axs[0, 2].tick_params(axis='x', rotation=45)
-
-# Temperature
-axs[1, 0].plot(df_outdoor["time"], df_outdoor["celsius_degree"], marker='o', color='gold')
-axs[1, 0].set_title("Temperature")
-axs[1, 0].set_ylabel("°C")
-axs[1, 0].tick_params(axis='x', rotation=45)
-
-# Humidity
-axs[1, 1].plot(df_outdoor["time"], df_outdoor["humidity"], marker='o', color='blue')
-axs[1, 1].set_title("Humidity")
-axs[1, 1].set_ylabel("%")
-axs[1, 1].tick_params(axis='x', rotation=45)
-
-# Empty (可放置其他指標或隱藏)
-axs[1, 2].axis('off')
-
-plt.tight_layout()
-st.pyplot(fig)
-
-#===========================================
