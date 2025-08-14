@@ -1054,9 +1054,6 @@ st.plotly_chart(fig, use_container_width=True)
 #------------------------------------------------------
 
 # -------- PM 資料抓取與圖表（穩定版） ----------
-# ---------- 資料抓取函式 ----------
-@st.cache_data(ttl=60)  # 每1分鐘更新一次
-# ---------- PM : 最近 10 天 ----------
 @st.cache_data(ttl=60)
 def load_pm_data(days=10):
     from datetime import datetime, timedelta, timezone
@@ -1065,62 +1062,53 @@ def load_pm_data(days=10):
     start_iso = start_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
     end_iso   = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    cols = ["time", "name", "pm1_0_atm", "pm2_5_atm", "pm10_atm"]
     resp = (
         supabase.table("wiolink")
-        .select("time, name, pm1_0_atm, pm2_5_atm, pm10_atm")
-        .eq("name", "wiolink window")
-        .gte("time", start_iso)   # 最近 10 天（UTC）
+        .select(",".join(cols))
+        .eq("name", "wiolink_window")     # ← 裝置名稱
+        .gte("time", start_iso)
         .lte("time", end_iso)
         .order("time", desc=False)
+        .range(0, 5000)                   # ← 超過 1000 筆就會被截斷，這裡拉高上限
         .execute()
     )
+
     df = pd.DataFrame(resp.data)
     if df.empty:
         return df
 
-    # 轉當地時區顯示（台北）
     df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert("Asia/Taipei")
-    df["pm1_0_atm"] = pd.to_numeric(df["pm1_0_atm"], errors="coerce")
-    df["pm2_5_atm"] = pd.to_numeric(df["pm2_5_atm"], errors="coerce")
-    df["pm10_atm"] = pd.to_numeric(df["pm10_atm"], errors="coerce")
-    return df.dropna(subset=["pm1_0_atm"]).sort_values("time")
+    for c in ["pm1_0_atm", "pm2_5_atm", "pm10_atm"]:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
 
+    # 只刪掉「三個 PM 全為 NaN」的列；保留任一有值的時間點
+    return df.dropna(subset=["pm1_0_atm", "pm2_5_atm", "pm10_atm"], how="all").sort_values("time")
 
-# ---------- 畫面與圖表 ----------
+df_pm = load_pm_data(days=10)
 
-df_pm = load_pm_data(days=10)         # ← 這裡就是 10 天
-
-fig = px.line(
-    data_frame= df_pm,
-    x="time",
-    y="pm1_0_atm",
-    title="604 教室 PM1.0 濃度變化趨勢",
-    labels={"pm1_0_atm": "PM1.0 (μg/m³)", "time": "時間"},
-    height=500
-)
-
-st.plotly_chart(fig, use_container_width=True)
-#--------------------------------------------
-fig = px.line(
-    data_frame= df_pm,
-    x="time",
-    y="pm2_5_atm",
-    title="604 教室 PM2.5 濃度變化趨勢",
-    labels={"pm2_5_atm": "PM2.5 (μg/m³)", "time": "時間"},
-    height=500
-)
-
-st.plotly_chart(fig, use_container_width=True)
-
-#--------------------------------------------
-fig = px.line(
-    data_frame= df_pm,
-    x="time",
-    y="pm10_atm",
-    title="604 教室 PM10 濃度變化趨勢",
-    labels={"pm10_atm": "PM10 (μg/m³)", "time": "時間"},
-    height=500
-)
-
-st.plotly_chart(fig, use_container_width=True)
-#=========================================================
+if df_pm.empty:
+    st.info("最近 10 天沒有可用的 PM 資料（wiolink_window）。")
+else:
+    # 各自圖各自 dropna（避免某一項斷線牽連其它圖）
+    st.plotly_chart(
+        px.line(df_pm.dropna(subset=["pm1_0_atm"]), x="time", y="pm1_0_atm",
+                title="604 教室 PM1.0 濃度變化趨勢",
+                labels={"pm1_0_atm":"PM1.0 (μg/m³)", "time":"時間"},
+                height=500),
+        use_container_width=True
+    )
+    st.plotly_chart(
+        px.line(df_pm.dropna(subset=["pm2_5_atm"]), x="time", y="pm2_5_atm",
+                title="604 教室 PM2.5 濃度變化趨勢",
+                labels={"pm2_5_atm":"PM2.5 (μg/m³)", "time":"時間"},
+                height=500),
+        use_container_width=True
+    )
+    st.plotly_chart(
+        px.line(df_pm.dropna(subset=["pm10_atm"]), x="time", y="pm10_atm",
+                title="604 教室 PM10 濃度變化趨勢",
+                labels={"pm10_atm":"PM10 (μg/m³)", "time":"時間"},
+                height=500),
+        use_container_width=True
+    )
