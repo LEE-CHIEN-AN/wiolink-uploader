@@ -933,9 +933,6 @@ def load_pm_data(table_name="wiolink", device_name="wiolink window", days=10):
     return df.sort_values("time")
 
 
-# ★ 把表名換成你實際的 PM 表：可能是 "604_pm2.5" 或 "wiolink_pm"；若真的在 "wiolink"，也可填 "wiolink"
-PM_TABLE_NAME = "wiolink"   # <--- TODO：換成你的 Supabase 表名
-
 df_pm = load_pm_data(days=10)       # ← 這裡也是 10 天
 
 
