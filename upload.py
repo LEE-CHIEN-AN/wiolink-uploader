@@ -8,6 +8,14 @@ SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# === 將單筆感測資料上傳至 Supabase ===
+def upload_to_supabase(data):
+    try:
+        supabase.table("wiolink").insert(data).execute()
+        print("✅ 上傳成功：", data)
+    except Exception as e:
+        print("❌ 上傳失敗：", e)
+        
 # === 所有 Wio Link 板子的 token 與命名設定 ===
 DEVICES = [
     {
@@ -144,14 +152,37 @@ def get_thingspeak_604window_data():
     except Exception as e:
         print("❌ 無法取得 ThingSpeak 資料：", e)
         return None
-        
-# === 將單筆感測資料上傳至 Supabase ===
-def upload_to_supabase(data):
+
+# === 抓取 ThingSpeak 最新一筆資料 ===
+def fetch_latest_thingspeak_604outdoor_data():
+    # === ThingSpeak API 設定 ===
+    READ_API_KEY = "GZW95SILPGDZ8LZB"
+    CHANNEL_ID = "3031639"
+    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
     try:
-        supabase.table("wiolink").insert(data).execute()
-        print("✅ 上傳成功：", data)
+        response = requests.get(FIELD_URL, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
+        response.raise_for_status()
+
+        feed = response.json()["feeds"][0]
+        data = {
+            "name": "604_outdoor",
+            "humidity": int(feed["field2"]),
+            "light_intensity": None,
+            "celsius_degree": float(feed["field1"]),
+            "mag_approach": None,
+            "touch": None,
+            "pm1_0_atm": int(feed["field3"]),
+            "pm2_5_atm": int(feed["field4"]),
+            "pm10_atm": int(feed["field5"])
+        }
+
+        upload_to_postgres(data)
+        upload_to_supabase(data)
+
     except Exception as e:
-        print("❌ 上傳失敗：", e)
+        print("❌ ThingSpeak 最新資料抓取失敗：", e)
+        
+
 
 # === 主程式：針對所有板子執行抓取與上傳 ===
 for device in DEVICES:
@@ -179,4 +210,8 @@ if __name__ == "__main__":
     vlabwindow_data = get_thingspeak_604window_data()
     if vlabcenter_data:
         upload_to_supabase(vlabwindow_data)
-
+        
+    # 上傳 ThingSpeak 604_outdoor 資料
+    vlaboutdoor_data = get_thingspeak_604outdoor_data()
+    if vlaboutdoor_data:
+        upload_to_supabase(vlaboutdoor_data)
