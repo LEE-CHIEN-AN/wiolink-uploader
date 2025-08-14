@@ -843,6 +843,111 @@ else:
     st.plotly_chart(fig, use_container_width=True)
 
 #=========================================================
+# ========== 資料抓取 ==========
+@st.cache_data(ttl=60)  # 每1分鐘更新
+def load_data_407():
+    now = datetime.now(timezone(timedelta(hours=8)))
+    start_time = now - timedelta(hours=24)
+
+    response = supabase.table("wiolink") \
+        .select("time, name, light_intensity, celsius_degree, humidity") \
+        .eq("name", "407_aircondition") \
+        .gte("time", start_time.isoformat()) \
+        .order("time", desc=False) \
+        .execute()
+
+    df = pd.DataFrame(response.data)
+    df["time"] = pd.to_datetime(df["time"])
+    return df.dropna()
+
+df_407 = load_data_407()
+
+# ========== 畫面與圖表 ==========
+
+st.title("🌱 407 空氣品質即時概況")
+# 取最後一筆資料
+latest = df_407.iloc[-1]
+st.markdown(f"📅 最新資料時間：{latest['time'].strftime('%Y-%m-%d %H:%M:%S')}")
+
+# 以 HTML + CSS 呈現卡片
+st.markdown(
+    f"""
+    <style>
+    .card-container {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }}
+    .card {{
+        padding: 20px;
+        border-radius: 15px;
+        width: 160px;
+        color: white;
+        text-align: center;
+        font-family: 'Noto Sans CJK TC', sans-serif;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }}
+    .green {{ background-color: #4CAF50; }}
+    .orange {{ background-color: #FF9800; }}
+    .yellow {{ background-color: #FFC107; color: black; }}
+    .blue {{ background-color: #2196F3; }}
+    .brown {{ background-color: #A52A2A;}}
+    .value {{
+        font-size: 32px;
+        font-weight: bold;
+    }}
+    .label {{
+        font-size: 18px;
+        margin-top: 5px;
+    }}
+    </style>
+
+    <div class="card-container">
+        <div class="card brown">
+            <div class="label">Light intensity</div>
+            <div class="value">{latest["light_intensity"]} lux</div>
+        </div>
+        <div class="card yellow">
+            <div class="label">Temp</div>
+            <div class="value">{latest["celsius_degree"]:.1f}°C</div>
+        </div>
+        <div class="card blue">
+            <div class="label">Humidity</div>
+            <div class="value">{latest["humidity"]:.0f}%</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.title("🌱 407 環境感測看板")
+
+fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+
+# light
+axs[0].plot(df_407["time"], df_407["light_intensity"], marker='o', color='brown')
+axs[0].set_title("Light intensity")
+axs[0].set_ylabel("lux")
+axs[0].tick_params(axis='x', rotation=45)
+
+# Temperature
+axs[1].plot(df_407["time"], df_407["celsius_degree"], marker='o', color='gold')
+axs[1].set_title("Temperature")
+axs[1].set_ylabel("°C")
+axs[1].tick_params(axis='x', rotation=45)
+
+# Humidity
+axs[2].plot(df_407["time"], df_407["humidity"], marker='o', color='blue')
+axs[2].set_title("Humidity")
+axs[2].set_ylabel("%")
+axs[2].tick_params(axis='x', rotation=45)
+
+
+
+plt.tight_layout()
+st.pyplot(fig)
+
 
 #=========================================================
 # ========== 資料抓取 ==========
