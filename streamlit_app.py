@@ -340,7 +340,7 @@ def iaqi_label(score):
     else:
         return "🔴 嚴重污染"
 # ==================== IAQI 五色 Badge 呈現 ====================
-st.subheader("🌈 室內空氣品質 IAQI 指數（Badge 版）")
+st.subheader("🌈 604 室內空氣品質（indoor air quality, IAQ）")
 
 # 五色樣式（對應你貼的表格配色）
 st.markdown("""
