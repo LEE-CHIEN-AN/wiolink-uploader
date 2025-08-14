@@ -964,7 +964,7 @@ for i in range(0, len(urls), 2):
                             frameborder="0">
                     </iframe>
                     """,
-                    height=300, width = 500,   # 容器高度 >= iframe 高度
+                    height=280, width = 470,   # 容器高度 >= iframe 高度
                 )
 
 
