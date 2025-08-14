@@ -1066,7 +1066,7 @@ def load_pm_data(days=10):
     resp = (
         supabase.table("wiolink")
         .select(",".join(cols))
-        .eq("name", "wiolink_window")     # ← 裝置名稱
+        .eq("name", "wiolink window")     # ← 裝置名稱
         .gte("time", start_iso)
         .lte("time", end_iso)
         .order("time", desc=False)
