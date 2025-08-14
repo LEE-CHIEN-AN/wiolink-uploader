@@ -1068,7 +1068,7 @@ def load_pm_data(days=10):
     resp = (
         supabase.table("wiolink")
         .select("time, name, pm1_0_atm, pm2_5_atm, pm10_atm")
-        .eq("name", "wiolin window")
+        .eq("name", "wiolink window")
         .gte("time", start_iso)   # 最近 10 天（UTC）
         .lte("time", end_iso)
         .order("time", desc=False)
