@@ -955,7 +955,7 @@ for i in range(0, len(urls), 2):
         if i + j < len(urls):
             with cols[j]:
                 components.html(
-                    f'<iframe width="100%" height="260" style="border:1px solid #cccccc;" src="{urls[i+j]}"></iframe>',
+                    f'<iframe width="450" height="260" style="border:1px solid #cccccc;" src="{urls[i+j]}"></iframe>',
                     height=260
                 )
 
