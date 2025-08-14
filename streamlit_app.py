@@ -393,7 +393,7 @@ st.markdown("""
 .iaqi-moderate   { background:#ADFF9D;  color:#0f3a15; }  /* olive Moderate 61–80 */
 .iaqi-polluted   { background:#fdffb6;  color:#3c2a00;}  /* orange Polluted 41–60 */
 .iaqi-very       { background:#FF920E;  color:#3C2100; }  /* red-orange Very Polluted 21–40 */
-.iaqi-severe     { background:#ff6b6b;  color:#FFEEEE;  }  /* deep magenta Severe 0–20 */
+.iaqi-severe     { background:#ff6b6b;  color:#3D0000;  }  /* deep magenta Severe 0–20 */
 .iaqi-chip {
   font-weight: 800; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.35);
   margin-right: 8px; display: inline-block;
@@ -505,7 +505,7 @@ st.markdown("""
 .pmv-neutral { background:#baf3e0; color:#0b2a3f;} /* NEUTRAL (-0.5,0.5] 綠 */
 .pmv-warm1   { background:#ffe08a; color:#3c2a00;} /* SLIGHTLY WARM (0.5,1.5] 黃 */
 .pmv-warm2   { background:#ffb36a; color:#3c1200;} /* WARM (1.5,2.5] 橘 */
-.pmv-hot3    { background:#ff6b6b; color:#FFEEEE; }    /* HOT   > 2.5 紅 */
+.pmv-hot3    { background:#ff6b6b; color:#3D0000; }    /* HOT   > 2.5 紅 */
 
 .pmv-line { font-weight:600; opacity:.9 }
 </style>
