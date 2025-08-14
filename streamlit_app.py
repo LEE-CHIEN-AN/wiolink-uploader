@@ -1010,7 +1010,7 @@ def load_co2_data(days=10):
 
 # ---------- 畫面與圖表 ----------
 st.title("🌿 604 長期趨勢圖")
-
+st.image("https://urbanrenewal.wealth.com.tw/uploads/editor/1625104721.jpg", use_container_width=True)	
 df = load_co2_data(days=10)         # ← 這裡就是 10 天
 
 fig = px.line(
