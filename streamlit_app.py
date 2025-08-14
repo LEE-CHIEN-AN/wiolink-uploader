@@ -389,11 +389,11 @@ st.markdown("""
   color: #111827;
   border: 1px solid rgba(0,0,0,0.06);
 }
-.iaqi-good       { background:#baf3e0; }  /* teal-ish Good 81–100 */
-.iaqi-moderate   { background:#c8d17b; }  /* olive Moderate 61–80 */
-.iaqi-polluted   { background:#ffc480; }  /* orange Polluted 41–60 */
-.iaqi-very       { background:#ff8b7d; }  /* red-orange Very Polluted 21–40 */
-.iaqi-severe     { background:#d94470; color: #fff; }  /* deep magenta Severe 0–20 */
+.iaqi-good       { background:#326199; }  /* teal-ish Good 81–100 */
+.iaqi-moderate   { background:#4fb1a1; }  /* olive Moderate 61–80 */
+.iaqi-polluted   { background:#ffc055; }  /* orange Polluted 41–60 */
+.iaqi-very       { background:#eb8d50; }  /* red-orange Very Polluted 21–40 */
+.iaqi-severe     { background:#df6e5b; color: #fff; }  /* deep magenta Severe 0–20 */
 .iaqi-chip {
   font-weight: 800; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.35);
   margin-right: 8px; display: inline-block;
