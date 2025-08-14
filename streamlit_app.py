@@ -936,45 +936,6 @@ st.markdown(
 
 st.title("🌱 6樓 戶外感測看板")
 
-fig, axs = plt.subplots(2, 3, figsize=(18, 10))
-
-# PM1.0
-axs[0, 0].plot(df_outdoor["time"], df_outdoor["pm1_0_atm"], marker='o', color='red')
-axs[0, 0].set_title("PM1.0")
-axs[0, 0].set_ylabel("μg/m³")
-axs[0, 0].tick_params(axis='x', rotation=45)
-
-# PM2.5
-axs[0, 1].plot(df_outdoor["time"], df_outdoor["pm2_5_atm"], marker='o', color='pink')
-axs[0, 1].set_title("PM2.5")
-axs[0, 1].set_ylabel("μg/m³")
-axs[0, 1].tick_params(axis='x', rotation=45)
-
-# PM10
-axs[0, 2].plot(df_outdoor["time"], df_outdoor["pm10_atm"], marker='o', color='purple')
-axs[0, 2].set_title("PM10")
-axs[0, 2].set_ylabel("μg/m³")
-axs[0, 2].tick_params(axis='x', rotation=45)
-
-# Temperature
-axs[1, 0].plot(df_outdoor["time"], df_outdoor["celsius_degree"], marker='o', color='gold')
-axs[1, 0].set_title("Temperature")
-axs[1, 0].set_ylabel("°C")
-axs[1, 0].tick_params(axis='x', rotation=45)
-
-# Humidity
-axs[1, 1].plot(df_outdoor["time"], df_outdoor["humidity"], marker='o', color='blue')
-axs[1, 1].set_title("Humidity")
-axs[1, 1].set_ylabel("%")
-axs[1, 1].tick_params(axis='x', rotation=45)
-
-# Empty (可放置其他指標或隱藏)
-axs[1, 2].axis('off')
-
-plt.tight_layout()
-st.pyplot(fig)
-
-#===========================================
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -994,8 +955,7 @@ for i in range(0, len(urls), 2):
         if i + j < len(urls):
             with cols[j]:
                 components.html(
-                    f'<iframe width="100%" height="260" style="border:1px solid #cccccc;" src="{urls[i+j]}"></iframe>',
-                    height=280
+                    f'<iframe width="100%" height="260" style="border:1px solid #cccccc;" src="{urls[i+j]}"></iframe>'
                 )
 
 
