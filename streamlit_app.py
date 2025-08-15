@@ -224,7 +224,7 @@ st.markdown("""
             background: rgba(255,255,255,.35); display: inline-block; }
 
 /* 與前面 PMV/IAQI 用色一致：綠 / 黃 / 紅 */
-.env-ok    { background:#ADFF9D;  color:#0f3a15; }  /* 正常 */
+.env-ok    { background:#CAFFBF;  color:#0f3a15; }  /* 正常 */
 .env-warn  { background:#FDFFB6;  color:#3c2a00; }  /* 接近上限 */
 .env-bad   { background:#ff6b6b; color:#3D0000; }  /* 超標 */
 .env-sub   { font-weight:600; opacity:.9 }
@@ -391,7 +391,7 @@ st.markdown("""
   border: 1px solid rgba(0,0,0,0.06);
 }
 .iaqi-good       { background:#9bf6ff;  color:#005057; }  /* teal-ish Good 81–100 */
-.iaqi-moderate   { background:#ADFF9D;  color:#0f3a15; }  /* olive Moderate 61–80 */
+.iaqi-moderate   { background:#CAFFBF;  color:#0f3a15; }  /* olive Moderate 61–80 */
 .iaqi-polluted   { background:#fdffb6;  color:#3c2a00;}  /* orange Polluted 41–60 */
 .iaqi-very       { background:#FF920E;  color:#3C2100; }  /* red-orange Very Polluted 21–40 */
 .iaqi-severe     { background:#ff6b6b;  color:#3D0000;  }  /* deep magenta Severe 0–20 */
@@ -503,7 +503,7 @@ st.markdown("""
 .pmv-cold3   { background:#1e90ff; color:#fff;}    /* COLD  ≤ -2.5 深藍 */
 .pmv-cold2   { background:#4da6ff; color:#fff;}    /* COOL  (-2.5,-1.5] 藍 */
 .pmv-cold1   { background:#7fd3ff; color:#0b2a3f;} /* SLIGHTLY COOL (-1.5,-0.5] 淺藍青 */
-.pmv-neutral { background:#baf3e0; color:#0b2a3f;} /* NEUTRAL (-0.5,0.5] 綠 */
+.pmv-neutral { background:#CAFFBF; color:#0b2a3f;} /* NEUTRAL (-0.5,0.5] 綠 */
 .pmv-warm1   { background:#ffe08a; color:#3c2a00;} /* SLIGHTLY WARM (0.5,1.5] 黃 */
 .pmv-warm2   { background:#ffb36a; color:#3c1200;} /* WARM (1.5,2.5] 橘 */
 .pmv-hot3    { background:#ff6b6b; color:#3D0000; }    /* HOT   > 2.5 紅 */
