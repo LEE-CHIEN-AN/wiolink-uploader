@@ -126,9 +126,9 @@ def get_thingspeak_604window_data():
         print("❌ 無法取得 ThingSpeak 資料：", e)
         return None
 
+
 # === 抓取 ThingSpeak 最新一筆資料 ===
 def get_thingspeak_604outdoor_data():
-    # === ThingSpeak API 設定 ===
     READ_API_KEY = "GZW95SILPGDZ8LZB"
     CHANNEL_ID = "3031639"
     FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
@@ -138,26 +138,23 @@ def get_thingspeak_604outdoor_data():
 
         feed = response.json()["feeds"][0]
         data = {
-            "name":"604_outdoor",
-            "humidity": int(feed["field2"]),
+            "name": "604_outdoor",
+            "humidity": int(float(feed["field2"])) if feed["field2"] is not None else None,
             "light_intensity": None,
-            "celsius_degree": float(feed["field1"]),
+            "celsius_degree": float(feed["field1"]) if feed["field1"] is not None else None,
             "mag_approach": None,
             "touch": None,
-            "pm1_0_atm": int(feed["field3"]),
-            "pm2_5_atm": int(feed["field4"]),
-            "pm10_atm": int(feed["field5"])
+            "pm1_0_atm": float(feed["field3"]) if feed["field3"] is not None else None,
+            "pm2_5_atm": float(feed["field4"]) if feed["field4"] is not None else None,
+            "pm10_atm": float(feed["field5"]) if feed["field5"] is not None else None,
         }
+        return data                   # ★ 一定要 return
 
     except Exception as e:
         print("❌ ThingSpeak 最新資料抓取失敗：", e)
-        
+        return None                   # ★ 失敗時回傳 None
 
 
-# === 主程式：針對所有板子執行抓取與上傳 ===
-for device in DEVICES:
-    data = get_sensor_data(device)
-    upload_to_supabase(data)
 
 # === 主程式 ===
 if __name__ == "__main__":
@@ -171,12 +168,12 @@ if __name__ == "__main__":
     if vlabcenter_data:
         upload_to_supabase(vlabcenter_data)
 
-    # 上傳 ThingSpeak 604 window資料
+    # 上傳 ThingSpeak 604 window 資料
     vlabwindow_data = get_thingspeak_604window_data()
-    if vlabcenter_data:
+    if vlabwindow_data:               # ★ 用正確的變數名判斷
         upload_to_supabase(vlabwindow_data)
-        
-    # 上傳 ThingSpeak 604_outdoor 資料
+
+    # 上傳 ThingSpeak 604 outdoor 資料
     vlaboutdoor_data = get_thingspeak_604outdoor_data()
     if vlaboutdoor_data:
         upload_to_supabase(vlaboutdoor_data)
