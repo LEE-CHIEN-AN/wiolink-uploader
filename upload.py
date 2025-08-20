@@ -144,9 +144,9 @@ def get_thingspeak_604outdoor_data():
             "celsius_degree": float(feed["field1"]) if feed["field1"] is not None else None,
             "mag_approach": None,
             "touch": None,
-            "pm1_0_atm": float(feed["field3"]) if feed["field3"] is not None else None,
-            "pm2_5_atm": float(feed["field4"]) if feed["field4"] is not None else None,
-            "pm10_atm": float(feed["field5"]) if feed["field5"] is not None else None,
+            "pm1_0_atm": int(feed["field3"]) if feed["field3"] is not None else None,
+            "pm2_5_atm": int(feed["field4"]) if feed["field4"] is not None else None,
+            "pm10_atm": int(feed["field5"]) if feed["field5"] is not None else None,
         }
         return data                   # ★ 一定要 return
 
