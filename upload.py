@@ -70,33 +70,6 @@ def get_sensor_data(device):
             print(f"[錯誤] 抓取 {device['name']} 的 {key} 失敗：", e)
 
     return result
-    
-# === 從 ThingSpeak 抓 407_aircondition 最新資料 ===
-def get_thingspeak_407_data():
-    CHANNEL_ID = "3026055"
-    READ_API_KEY = "797QS4ZPIJYT4U7W"
-    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
-    params = {"api_key": READ_API_KEY, "results": 1}
-
-    try:
-        r = requests.get(FIELD_URL, params=params, timeout=5)
-        r.raise_for_status()
-        feed = r.json()["feeds"][0]
-
-        return {
-            "name": "407_aircondition",
-            "humidity": int(feed["field2"]),
-            "light_intensity": int(feed["field3"]),
-            "motion_detected": None,
-            "celsius_degree": float(feed["field1"]),
-            "mag_approach": None,
-            "dust": None,
-            "touch": int(feed["field4"])
-        }
-
-    except Exception as e:
-        print("❌ 無法取得 ThingSpeak 資料：", e)
-        return None
 
 def get_thingspeak_604center_data():
     CHANNEL_ID = "3022873"
@@ -165,7 +138,7 @@ def get_thingspeak_604outdoor_data():
 
         feed = response.json()["feeds"][0]
         data = {
-            "name": "604_outdoor",
+            "name":"604_outdoor",
             "humidity": int(feed["field2"]),
             "light_intensity": None,
             "celsius_degree": float(feed["field1"]),
@@ -193,11 +166,6 @@ if __name__ == "__main__":
         data = get_sensor_data(device)
         upload_to_supabase(data)
 
-    # 上傳 ThingSpeak 407 資料
-    ts_data = get_thingspeak_407_data()
-    if ts_data:
-        upload_to_supabase(ts_data)
-
     # 上傳 ThingSpeak 604 center 資料
     vlabcenter_data = get_thingspeak_604center_data()
     if vlabcenter_data:
@@ -209,6 +177,6 @@ if __name__ == "__main__":
         upload_to_supabase(vlabwindow_data)
         
     # 上傳 ThingSpeak 604_outdoor 資料
-    vlaboutdoor_data =get_thingspeak_604outdoor_data()
+    vlaboutdoor_data = get_thingspeak_604outdoor_data()
     if vlaboutdoor_data:
         upload_to_supabase(vlaboutdoor_data)
