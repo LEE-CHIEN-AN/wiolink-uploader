@@ -46,7 +46,7 @@ def load_data_604light():
 
     response = supabase.table("wiolink") \
         .select("time, name, light_intensity") \
-        .eq("name", "wiolink wall") \
+        .eq("name", "wiolink door") \
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
         .execute()
