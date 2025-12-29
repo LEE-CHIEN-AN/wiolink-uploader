@@ -11,8 +11,8 @@ BASE_URL = "https://cn.wio.seeed.io/v1/node"
 
 # 你原本的 Wio 裝置
 DEVICES = [
-    {"name": "wiolink door", "token": "96c7644289c50aff68424a490845267f", "source": "wio", "location": "604"},
-    {"name": "wiolink wall", "token": "1b10e1172b455a426b53af996442c0ce", "source": "wio", "location": "604"},
+    {"name": "604_door", "token": "96c7644289c50aff68424a490845267f", "source": "wio", "location": "604"},
+    {"name": "604_wall", "token": "1b10e1172b455a426b53af996442c0ce", "source": "wio", "location": "604"},
 ]
 
 SENSORS = {
@@ -152,7 +152,7 @@ def get_thingspeak_604window_values():
             "pm10_atm": float(feed["field6"]) if feed["field6"] else None,
         }
     except Exception as e:
-        print("❌ 無法取得 ThingSpeak wiolink window：", e)
+        print("❌ 無法取得 ThingSpeak 604_window：", e)
         return None
 
 def get_thingspeak_604outdoor_values():
@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
     v = get_thingspeak_604window_values()
     if v:
-        ingest_one("wiolink window", "thingspeak", "604", None, v)
+        ingest_one("604_window", "thingspeak", "604", None, v)
 
     v = get_thingspeak_604outdoor_values()
     if v:
