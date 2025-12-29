@@ -46,7 +46,7 @@ def load_data_604light():
 
     response = supabase.table("wiolink") \
         .select("time, name, light_intensity") \
-        .eq("name", "wiolink door") \
+        .eq("name", "604_door") \
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
         .execute()
@@ -62,7 +62,7 @@ def load_data_604PM():
 
     response = supabase.table("wiolink") \
         .select("time, name, pm1_0_atm,pm2_5_atm, pm10_atm, mag_approach") \
-        .eq("name", "wiolink window") \
+        .eq("name", "604_window") \
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
         .execute()
@@ -568,9 +568,9 @@ st.image("https://www.simscale.com/wp-content/uploads/2019/09/Artboard-1-1024x32
 import matplotlib.colors as mcolors
 # 感測器固定座標
 sensor_coord_map = {
-    "wiolink window": [180, 0],
-    "wiolink wall": [688, 215],
-    "wiolink door": [500, 678],
+    "604_window": [180, 0],
+    "604_wall": [688, 215],
+    "604_door": [500, 678],
     "604_air_quality": [0, 305],
     "604_center" : [300,400]
 }
@@ -638,9 +638,9 @@ def idw(x, y, points, values, power=2):
 
 
 sensor_short_name = {
-    "wiolink window": "Window",
-    "wiolink door": "Door",
-    "wiolink wall": "Wall",
+    "604_window": "Window",
+    "604_door": "Door",
+    "604_wall": "Wall",
     "604_air_quality": "iMac",
     "604_pm2.5" : "PM2.5"
 }
@@ -965,7 +965,7 @@ def load_pm_data(days=10):
         return (
             supabase.table("wiolink")
             .select(",".join(cols))
-            .eq("name", "wiolink window")   # ← 裝置名稱
+            .eq("name", "604_window")   # ← 裝置名稱
             .gte("time", start_iso)
             .lte("time", end_iso)
             .order("time", desc=False)
