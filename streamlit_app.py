@@ -892,7 +892,7 @@ def load_co2_data(days=10):
     df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert("Asia/Taipei")
     df["co2eq"] = pd.to_numeric(df["co2eq"], errors="coerce")
     df["total_voc"] = pd.to_numeric(df["total_voc"], errors="coerce")
-    return df.dropna(subset=["co2eq"]).sort_values("time")
+    return df
 
 
 # ---------- 畫面與圖表 ----------
