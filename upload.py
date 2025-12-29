@@ -3,18 +3,28 @@ import requests
 from datetime import datetime, timezone
 from supabase import create_client
 
+# =========================
+# Supabase 設定（GitHub Secrets）
+# =========================
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError("Missing SUPABASE_URL / SUPABASE_KEY env vars")
+
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# =========================
+# Wio API
+# =========================
 BASE_URL = "https://cn.wio.seeed.io/v1/node"
 
-# 你原本的 Wio 裝置
+# 你的 Wio 裝置（已改名）
 DEVICES = [
-    {"name": "604_door", "token": "96c7644289c50aff68424a490845267f", "source": "wio", "location": "604"},
-    {"name": "604_wall", "token": "1b10e1172b455a426b53af996442c0ce", "source": "wio", "location": "604"},
+    {"device_name": "604_door", "token": "96c7644289c50aff68424a490845267f", "source": "wio", "location": "604"},
+    {"device_name": "604_wall", "token": "1b10e1172b455a426b53af996442c0ce", "source": "wio", "location": "604"},
 ]
 
+# Wio 感測器 API 路徑
 SENSORS = {
     "light_intensity": "/GroveDigitalLightI2C0/lux",
     "motion_detected": "/GrovePIRMotionD1/approach",
@@ -24,12 +34,66 @@ SENSORS = {
     "mag_approach": "/GroveMagneticSwitchD0/approach",
 }
 
-# ---- DB helpers ----
+# =========================
+# 型別推斷規則（你指定的）
+# =========================
+EXPLICIT_TYPES = {
+    "door_status": "text",
+    "motion_detected": "bool",
+    "mag_approach": "bool",
+    "touch": "bool",
+}
 
-def upsert_device(device_name: str, source: str = "other", location: str | None = None, token: str | None = None) -> int:
+def infer_value_type(metric_key: str) -> str:
     """
-    Upsert devices by device_name, return device_id.
+    回傳 metrics.value_type 的值：'numeric' / 'bool' / 'text'
     """
+    return EXPLICIT_TYPES.get(metric_key, "numeric")
+
+def coerce_value(metric_key: str, value):
+    """
+    依 metric_key 做值轉型（確保寫入 reading_values 時型別一致）
+    - 指定為 bool 的：把 0/1、"0"/"1"、True/False 等轉成 bool
+    - 指定為 text 的：轉成 str
+    - 其餘 numeric：盡量轉 float（失敗就回原值，讓後續當 text 寫入以免整筆掛掉）
+    """
+    t = infer_value_type(metric_key)
+
+    if value is None:
+        return None
+
+    if t == "bool":
+        # 常見狀況：0/1、"0"/"1"
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return bool(int(value))
+        if isinstance(value, str):
+            v = value.strip().lower()
+            if v in ("1", "true", "t", "yes", "y", "on"):
+                return True
+            if v in ("0", "false", "f", "no", "n", "off"):
+                return False
+        # 無法辨識就保守轉 bool（非空字串會變 True；不理想但避免整批失敗）
+        return bool(value)
+
+    if t == "text":
+        return str(value)
+
+    # numeric
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.strip())
+        except Exception:
+            return value  # 讓後續 fallback 成 text
+    return value
+
+# =========================
+# DB helpers（新版 schema：device_name / metric_key）
+# =========================
+def upsert_device(device_name: str, source: str = "other", location: str | None = None, token: str | None = None) -> None:
     payload = {
         "device_name": device_name,
         "source": source,
@@ -37,71 +101,81 @@ def upsert_device(device_name: str, source: str = "other", location: str | None 
         "token": token,
         "is_active": True,
     }
-    # Supabase upsert needs unique constraint; device_name is unique.
-    res = supabase.table("devices").upsert(payload, on_conflict="device_name").execute()
-    # upsert 回來通常含 data，但不同版本行為可能略不同；保守起見再查一次
-    row = supabase.table("devices").select("device_id").eq("device_name", device_name).limit(1).execute().data[0]
-    return int(row["device_id"])
+    supabase.table("devices").upsert(payload, on_conflict="device_name").execute()
 
-def ensure_metrics(metric_keys: list[str]) -> dict[str, int]:
+def ensure_metrics(metric_keys: list[str]) -> None:
     """
-    Ensure metrics exist. Return mapping metric_key -> metric_id.
+    確保 metrics 表中存在所有 metric_key，並依規則寫入正確 value_type。
     """
     if not metric_keys:
-        return {}
+        return
 
-    # 先查已存在的
-    existing = supabase.table("metrics").select("metric_id,metric_key").in_("metric_key", metric_keys).execute().data
-    mapping = {m["metric_key"]: int(m["metric_id"]) for m in existing}
-
-    # 補不存在的
-    to_insert = []
+    rows = []
     for k in metric_keys:
-        if k not in mapping:
-            # 這裡預設 numeric；若你要更嚴謹，可在此加型別推斷
-            to_insert.append({"metric_key": k, "value_type": "numeric"})
-    if to_insert:
-        supabase.table("metrics").upsert(to_insert, on_conflict="metric_key").execute()
-        # 再查一次補齊
-        existing2 = supabase.table("metrics").select("metric_id,metric_key").in_("metric_key", metric_keys).execute().data
-        mapping = {m["metric_key"]: int(m["metric_id"]) for m in existing2}
+        rows.append({
+            "metric_key": k,
+            "value_type": infer_value_type(k),
+        })
 
-    return mapping
+    supabase.table("metrics").upsert(rows, on_conflict="metric_key").execute()
 
-def insert_reading(device_id: int, observed_at: datetime, raw: dict | None = None) -> int:
+def insert_reading(device_name: str, observed_at: datetime, raw: dict | None = None) -> int:
     res = supabase.table("readings").insert({
-        "device_id": device_id,
+        "device_name": device_name,
         "observed_at": observed_at.isoformat(),
         "raw": raw
     }).execute()
     return int(res.data[0]["reading_id"])
 
-def insert_reading_values(reading_id: int, metric_id_map: dict[str, int], values: dict):
+def build_value_row(reading_id: int, metric_key: str, value):
+    """
+    依 infer_value_type 決定寫到 value_numeric/value_bool/value_text。
+    並符合 exactly_one_value constraint。
+    """
+    v = coerce_value(metric_key, value)
+    if v is None:
+        return None
+
+    row = {"reading_id": reading_id, "metric_key": metric_key}
+    t = infer_value_type(metric_key)
+
+    if t == "bool":
+        row["value_bool"] = bool(v)
+        return row
+
+    if t == "text":
+        row["value_text"] = str(v)
+        return row
+
+    # numeric：若轉型失敗而留下非數字（例如 "N/A"），就 fallback 成 text 避免寫入失敗
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        row["value_numeric"] = float(v)
+        return row
+
+    # fallback
+    row["value_text"] = str(v)
+    return row
+
+def insert_reading_values(reading_id: int, values: dict) -> None:
     rows = []
     for k, v in values.items():
         if v is None:
             continue
-        metric_id = metric_id_map[k]
-
-        row = {"reading_id": reading_id, "metric_id": metric_id}
-
-        # 型別分流：你可視需求擴充
-        if isinstance(v, bool):
-            row["value_bool"] = v
-        elif isinstance(v, (int, float)):
-            row["value_numeric"] = float(v)
-        else:
-            row["value_text"] = str(v)
-
-        rows.append(row)
+        row = build_value_row(reading_id, k, v)
+        if row:
+            rows.append(row)
 
     if rows:
         supabase.table("reading_values").insert(rows).execute()
 
-# ---- Data sources ----
-
-def get_wio_device_values(device):
-    values = {}
+# =========================
+# Data sources
+# =========================
+def get_wio_device_values(device: dict) -> dict:
+    """
+    從單一 Wio 裝置抓取所有感測器值，回傳 dict: {metric_key: value}
+    """
+    values: dict = {}
 
     for key, path in SENSORS.items():
         url = f"{BASE_URL}{path}?access_token={device['token']}"
@@ -109,104 +183,117 @@ def get_wio_device_values(device):
             r = requests.get(url, timeout=5)
             if not r.ok:
                 continue
-            value = list(r.json().values())[0]
-            values[key] = value
 
+            payload = r.json()
+            value = list(payload.values())[0]
+
+            # 先做一次 coercion（例如 mag_approach/motion_detected 轉 bool）
+            values[key] = coerce_value(key, value)
+
+            # 衍生指標：door_status（文字）
             if key == "mag_approach":
-                values["door_status"] = "closed" if value == 1 else "open"
+                values["door_status"] = "closed" if values[key] else "open"
 
         except Exception as e:
-            print(f"[錯誤] 抓取 {device['name']} 的 {key} 失敗：{e}")
+            print(f"[錯誤] 抓取 {device['device_name']} 的 {key} 失敗：{e}")
 
     return values
 
-def get_thingspeak_604center_values():
-    CHANNEL_ID = "3022873"
-    READ_API_KEY = "O1JMFSHUMRCTBQHL"
-    url = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
+def get_thingspeak_latest(channel_id: str, read_api_key: str) -> dict | None:
+    url = f"https://api.thingspeak.com/channels/{channel_id}/feeds.json"
     try:
-        r = requests.get(url, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
+        r = requests.get(url, params={"api_key": read_api_key, "results": 1}, timeout=5)
         r.raise_for_status()
-        feed = r.json()["feeds"][0]
-        return {
-            "celsius_degree": float(feed["field1"]) if feed["field1"] else None,
-            "humidity": float(feed["field2"]) if feed["field2"] else None,
-        }
+        feeds = r.json().get("feeds", [])
+        if not feeds:
+            return None
+        return feeds[0]
     except Exception as e:
-        print("❌ 無法取得 ThingSpeak 604_center：", e)
+        print(f"❌ ThingSpeak 讀取失敗 (channel={channel_id}): {e}")
         return None
 
-def get_thingspeak_604window_values():
-    CHANNEL_ID = "3027253"
-    READ_API_KEY = "G9XE5ZK8PCDHADKC"
-    url = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
-    try:
-        r = requests.get(url, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
-        r.raise_for_status()
-        feed = r.json()["feeds"][0]
-        return {
-            "celsius_degree": float(feed["field1"]) if feed["field1"] else None,
-            "humidity": float(feed["field2"]) if feed["field2"] else None,
-            "pm1_0_atm": float(feed["field4"]) if feed["field4"] else None,
-            "pm2_5_atm": float(feed["field5"]) if feed["field5"] else None,
-            "pm10_atm": float(feed["field6"]) if feed["field6"] else None,
-        }
-    except Exception as e:
-        print("❌ 無法取得 ThingSpeak 604_window：", e)
+def get_604_center_values() -> dict | None:
+    feed = get_thingspeak_latest("3022873", "O1JMFSHUMRCTBQHL")
+    if not feed:
         return None
+    return {
+        "celsius_degree": feed.get("field1"),
+        "humidity": feed.get("field2"),
+    }
 
-def get_thingspeak_604outdoor_values():
-    CHANNEL_ID = "3031639"
-    READ_API_KEY = "GZW95SILPGDZ8LZB"
-    url = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
-    try:
-        r = requests.get(url, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
-        r.raise_for_status()
-        feed = r.json()["feeds"][0]
-        return {
-            "celsius_degree": float(feed["field1"]) if feed["field1"] else None,
-            "humidity": float(feed["field2"]) if feed["field2"] else None,
-            "pm1_0_atm": float(feed["field3"]) if feed["field3"] else None,
-            "pm2_5_atm": float(feed["field4"]) if feed["field4"] else None,
-            "pm10_atm": float(feed["field5"]) if feed["field5"] else None,
-        }
-    except Exception as e:
-        print("❌ 無法取得 ThingSpeak 604_outdoor：", e)
+def get_604_window_values() -> dict | None:
+    feed = get_thingspeak_latest("3027253", "G9XE5ZK8PCDHADKC")
+    if not feed:
         return None
+    return {
+        "celsius_degree": feed.get("field1"),
+        "humidity": feed.get("field2"),
+        "pm1_0_atm": feed.get("field4"),
+        "pm2_5_atm": feed.get("field5"),
+        "pm10_atm": feed.get("field6"),
+    }
 
-# ---- Main ----
+def get_604_outdoor_values() -> dict | None:
+    feed = get_thingspeak_latest("3031639", "GZW95SILPGDZ8LZB")
+    if not feed:
+        return None
+    return {
+        "celsius_degree": feed.get("field1"),
+        "humidity": feed.get("field2"),
+        "pm1_0_atm": feed.get("field3"),
+        "pm2_5_atm": feed.get("field4"),
+        "pm10_atm": feed.get("field5"),
+    }
 
-def ingest_one(device_name: str, source: str, location: str | None, token: str | None, values: dict):
-    # 只保留有值的 keys（避免把 None 當成一個 metric 值寫入）
-    values = {k: v for k, v in values.items() if v is not None}
-    if not values:
+# =========================
+# Ingest pipeline
+# =========================
+def ingest_one(device_name: str, source: str, location: str | None, token: str | None, values: dict) -> None:
+    # 清理 + 依規則轉型
+    clean = {}
+    for k, v in values.items():
+        if v is None:
+            continue
+        clean[k] = coerce_value(k, v)
+
+    # 去掉轉完仍為 None 的
+    clean = {k: v for k, v in clean.items() if v is not None}
+
+    if not clean:
+        print(f"⚠️ {device_name}: no values, skip")
         return
 
-    device_id = upsert_device(device_name, source=source, location=location, token=token)
-
-    metric_id_map = ensure_metrics(list(values.keys()))
+    upsert_device(device_name, source=source, location=location, token=token)
+    ensure_metrics(list(clean.keys()))
 
     observed_at = datetime.now(timezone.utc)
-    reading_id = insert_reading(device_id, observed_at, raw={"values": values, "source": source})
+    reading_id = insert_reading(
+        device_name=device_name,
+        observed_at=observed_at,
+        raw={"source": source, "values": clean}
+    )
 
-    insert_reading_values(reading_id, metric_id_map, values)
-    print(f"✅ Ingested {device_name} at {observed_at.isoformat()} with {len(values)} metrics")
+    insert_reading_values(reading_id, clean)
+    print(f"✅ Ingested {device_name} at {observed_at.isoformat()} ({len(clean)} metrics)")
 
+# =========================
+# Main
+# =========================
 if __name__ == "__main__":
-    # Wio devices
+    # 1) Wio devices (604_door / 604_wall)
     for d in DEVICES:
         vals = get_wio_device_values(d)
-        ingest_one(d["name"], d["source"], d.get("location"), d.get("token"), vals)
+        ingest_one(d["device_name"], d["source"], d.get("location"), d.get("token"), vals)
 
-    # ThingSpeak devices
-    v = get_thingspeak_604center_values()
+    # 2) ThingSpeak devices: 604_center / 604_window / 604_outdoor
+    v = get_604_center_values()
     if v:
         ingest_one("604_center", "thingspeak", "604", None, v)
 
-    v = get_thingspeak_604window_values()
+    v = get_604_window_values()
     if v:
         ingest_one("604_window", "thingspeak", "604", None, v)
 
-    v = get_thingspeak_604outdoor_values()
+    v = get_604_outdoor_values()
     if v:
         ingest_one("604_outdoor", "thingspeak", "604", None, v)
