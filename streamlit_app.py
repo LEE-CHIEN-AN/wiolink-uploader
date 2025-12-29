@@ -76,6 +76,21 @@ df_light  = load_data_604light()
 df_pm = load_data_604PM()
 
 
+if df.empty:
+    st.error("❌ 604_air_quality 近 24 小時沒有資料（或被清理掉）")
+    st.stop()
+
+if df_light.empty:
+    st.warning("⚠️ 604_door（light_intensity）近 24 小時沒有資料，Light 卡片將顯示 N/A")
+
+if df_pm.empty:
+    st.warning("⚠️ 604_window（PM）近 24 小時沒有資料，PM 卡片將顯示 N/A")
+
+latest = df.iloc[-1]
+latest_light = df_light.iloc[-1] if not df_light.empty else None
+latest_pm = df_pm.iloc[-1] if not df_pm.empty else None
+
+
 # ========== 畫面與圖表 ==========
 st.title("🌱 604 空氣品質即時概況")
 
