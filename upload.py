@@ -1,179 +1,212 @@
-import requests
-from supabase import create_client
-from datetime import datetime, timezone, timedelta
 import os
+import requests
+from datetime import datetime, timezone
+from supabase import create_client
 
-# === Supabase 設定（從 GitHub Secrets 環境變數取得） ===
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# === 將單筆感測資料上傳至 Supabase ===
-def upload_to_supabase(data):
-    try:
-        supabase.table("wiolink").insert(data).execute()
-        print("✅ 上傳成功：", data)
-    except Exception as e:
-        print("❌ 上傳失敗：", e)
-        
-# === 所有 Wio Link 板子的 token 與命名設定 ===
-DEVICES = [
-    {
-        "name": "wiolink door",  # 第二塊板子
-        "token": "96c7644289c50aff68424a490845267f"
-    },
-    {
-        "name": "wiolink wall",
-        "token": "1b10e1172b455a426b53af996442c0ce"
-    }
-]
-
-# === Wio API 共用前綴 URL ===
 BASE_URL = "https://cn.wio.seeed.io/v1/node"
 
-# === 各感測器 API 路徑定義 ===
+# 你原本的 Wio 裝置
+DEVICES = [
+    {"name": "wiolink door", "token": "96c7644289c50aff68424a490845267f", "source": "wio", "location": "604"},
+    {"name": "wiolink wall", "token": "1b10e1172b455a426b53af996442c0ce", "source": "wio", "location": "604"},
+]
+
 SENSORS = {
-    "light_intensity": "/GroveDigitalLightI2C0/lux",  # 光照強度感測器
-    "motion_detected": "/GrovePIRMotionD1/approach",  # 移動偵測感測器
-    "dust": "/GroveDustD0/dust",  # 灰塵感測器
-    "celsius_degree": "/GroveTempHumD2/temperature",  # 溫度感測器
-    "humidity": "/GroveTempHumD2/humidity",  # 濕度感測器
-    "mag_approach": "/GroveMagneticSwitchD0/approach"  # 磁簧開關感測器
+    "light_intensity": "/GroveDigitalLightI2C0/lux",
+    "motion_detected": "/GrovePIRMotionD1/approach",
+    "dust": "/GroveDustD0/dust",
+    "celsius_degree": "/GroveTempHumD2/temperature",
+    "humidity": "/GroveTempHumD2/humidity",
+    "mag_approach": "/GroveMagneticSwitchD0/approach",
 }
 
-# === 從單一板子抓取所有感測器資料 ===
-def get_sensor_data(device):
-    result = {
-        "name": device["name"],
-        "humidity": None,
-        "light_intensity": None,
-        "motion_detected": None,  # 動作偵測感測器（目前未使用）
-        "dust": None,
-        "celsius_degree": None,
-        "mag_approach": None,  # 磁簧開關狀態（門是否靠近磁鐵）
+# ---- DB helpers ----
+
+def upsert_device(device_name: str, source: str = "other", location: str | None = None, token: str | None = None) -> int:
+    """
+    Upsert devices by device_name, return device_id.
+    """
+    payload = {
+        "device_name": device_name,
+        "source": source,
+        "location": location,
+        "token": token,
+        "is_active": True,
     }
+    # Supabase upsert needs unique constraint; device_name is unique.
+    res = supabase.table("devices").upsert(payload, on_conflict="device_name").execute()
+    # upsert 回來通常含 data，但不同版本行為可能略不同；保守起見再查一次
+    row = supabase.table("devices").select("device_id").eq("device_name", device_name).limit(1).execute().data[0]
+    return int(row["device_id"])
+
+def ensure_metrics(metric_keys: list[str]) -> dict[str, int]:
+    """
+    Ensure metrics exist. Return mapping metric_key -> metric_id.
+    """
+    if not metric_keys:
+        return {}
+
+    # 先查已存在的
+    existing = supabase.table("metrics").select("metric_id,metric_key").in_("metric_key", metric_keys).execute().data
+    mapping = {m["metric_key"]: int(m["metric_id"]) for m in existing}
+
+    # 補不存在的
+    to_insert = []
+    for k in metric_keys:
+        if k not in mapping:
+            # 這裡預設 numeric；若你要更嚴謹，可在此加型別推斷
+            to_insert.append({"metric_key": k, "value_type": "numeric"})
+    if to_insert:
+        supabase.table("metrics").upsert(to_insert, on_conflict="metric_key").execute()
+        # 再查一次補齊
+        existing2 = supabase.table("metrics").select("metric_id,metric_key").in_("metric_key", metric_keys).execute().data
+        mapping = {m["metric_key"]: int(m["metric_id"]) for m in existing2}
+
+    return mapping
+
+def insert_reading(device_id: int, observed_at: datetime, raw: dict | None = None) -> int:
+    res = supabase.table("readings").insert({
+        "device_id": device_id,
+        "observed_at": observed_at.isoformat(),
+        "raw": raw
+    }).execute()
+    return int(res.data[0]["reading_id"])
+
+def insert_reading_values(reading_id: int, metric_id_map: dict[str, int], values: dict):
+    rows = []
+    for k, v in values.items():
+        if v is None:
+            continue
+        metric_id = metric_id_map[k]
+
+        row = {"reading_id": reading_id, "metric_id": metric_id}
+
+        # 型別分流：你可視需求擴充
+        if isinstance(v, bool):
+            row["value_bool"] = v
+        elif isinstance(v, (int, float)):
+            row["value_numeric"] = float(v)
+        else:
+            row["value_text"] = str(v)
+
+        rows.append(row)
+
+    if rows:
+        supabase.table("reading_values").insert(rows).execute()
+
+# ---- Data sources ----
+
+def get_wio_device_values(device):
+    values = {}
 
     for key, path in SENSORS.items():
         url = f"{BASE_URL}{path}?access_token={device['token']}"
         try:
-            r = requests.get(url)  # 加上 timeout 避免卡住
-            if r.ok:
-                # 回傳 JSON 的值都只有一個，直接取第一個 value
-                value = list(r.json().values())[0]
-                result[key] = value
-                
-                # 根據 mag_approach 的數值決定門的狀態描述
-                if key == "mag_approach":
-                    result["door_status"] = "closed" if value == 1 else "open"
+            r = requests.get(url, timeout=5)
+            if not r.ok:
+                continue
+            value = list(r.json().values())[0]
+            values[key] = value
+
+            if key == "mag_approach":
+                values["door_status"] = "closed" if value == 1 else "open"
 
         except Exception as e:
-            print(f"[錯誤] 抓取 {device['name']} 的 {key} 失敗：", e)
+            print(f"[錯誤] 抓取 {device['name']} 的 {key} 失敗：{e}")
 
-    return result
+    return values
 
-def get_thingspeak_604center_data():
+def get_thingspeak_604center_values():
     CHANNEL_ID = "3022873"
     READ_API_KEY = "O1JMFSHUMRCTBQHL"
-    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
-    params = {"api_key": READ_API_KEY, "results": 1}
-
+    url = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
     try:
-        r = requests.get(FIELD_URL, params=params, timeout=5)
+        r = requests.get(url, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
         r.raise_for_status()
         feed = r.json()["feeds"][0]
-
         return {
-            "name": "604_center",
-            "humidity": int(feed["field2"]),
-            "light_intensity":  None,
-            "motion_detected": None,
-            "celsius_degree": float(feed["field1"]),
-            "mag_approach": None,
-            "dust": None,
-            "touch": None
+            "celsius_degree": float(feed["field1"]) if feed["field1"] else None,
+            "humidity": float(feed["field2"]) if feed["field2"] else None,
         }
-
     except Exception as e:
-        print("❌ 無法取得 ThingSpeak 資料：", e)
+        print("❌ 無法取得 ThingSpeak 604_center：", e)
         return None
 
-def get_thingspeak_604window_data():
+def get_thingspeak_604window_values():
     CHANNEL_ID = "3027253"
     READ_API_KEY = "G9XE5ZK8PCDHADKC"
-    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
-    params = {"api_key": READ_API_KEY, "results": 1}
-
+    url = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
     try:
-        r = requests.get(FIELD_URL, params=params, timeout=5)
+        r = requests.get(url, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
         r.raise_for_status()
         feed = r.json()["feeds"][0]
-
         return {
-            "name": "wiolink window",
-            "humidity": int(feed["field2"]),
-            "light_intensity":  None,
-            "motion_detected": None,
-            "celsius_degree": float(feed["field1"]),
-            "mag_approach":None,
-            "dust": None,
-            "touch": None,
-            "pm1_0_atm": int(feed["field4"]),
-            "pm2_5_atm": int(feed["field5"]),
-            "pm10_atm": int(feed["field6"])
+            "celsius_degree": float(feed["field1"]) if feed["field1"] else None,
+            "humidity": float(feed["field2"]) if feed["field2"] else None,
+            "pm1_0_atm": float(feed["field4"]) if feed["field4"] else None,
+            "pm2_5_atm": float(feed["field5"]) if feed["field5"] else None,
+            "pm10_atm": float(feed["field6"]) if feed["field6"] else None,
         }
-
     except Exception as e:
-        print("❌ 無法取得 ThingSpeak 資料：", e)
+        print("❌ 無法取得 ThingSpeak wiolink window：", e)
         return None
 
-
-# === 抓取 ThingSpeak 最新一筆資料 ===
-def get_thingspeak_604outdoor_data():
-    READ_API_KEY = "GZW95SILPGDZ8LZB"
+def get_thingspeak_604outdoor_values():
     CHANNEL_ID = "3031639"
-    FIELD_URL = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
+    READ_API_KEY = "GZW95SILPGDZ8LZB"
+    url = f"https://api.thingspeak.com/channels/{CHANNEL_ID}/feeds.json"
     try:
-        response = requests.get(FIELD_URL, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
-        response.raise_for_status()
-
-        feed = response.json()["feeds"][0]
-        data = {
-            "name": "604_outdoor",
-            "humidity": int(float(feed["field2"])) if feed["field2"] is not None else None,
-            "light_intensity": None,
-            "celsius_degree": float(feed["field1"]) if feed["field1"] is not None else None,
-            "mag_approach": None,
-            "touch": None,
-            "pm1_0_atm": int(feed["field3"]) if feed["field3"] is not None else None,
-            "pm2_5_atm": int(feed["field4"]) if feed["field4"] is not None else None,
-            "pm10_atm": int(feed["field5"]) if feed["field5"] is not None else None,
+        r = requests.get(url, params={"api_key": READ_API_KEY, "results": 1}, timeout=5)
+        r.raise_for_status()
+        feed = r.json()["feeds"][0]
+        return {
+            "celsius_degree": float(feed["field1"]) if feed["field1"] else None,
+            "humidity": float(feed["field2"]) if feed["field2"] else None,
+            "pm1_0_atm": float(feed["field3"]) if feed["field3"] else None,
+            "pm2_5_atm": float(feed["field4"]) if feed["field4"] else None,
+            "pm10_atm": float(feed["field5"]) if feed["field5"] else None,
         }
-        return data                   # ★ 一定要 return
-
     except Exception as e:
-        print("❌ ThingSpeak 最新資料抓取失敗：", e)
-        return None                   # ★ 失敗時回傳 None
+        print("❌ 無法取得 ThingSpeak 604_outdoor：", e)
+        return None
 
+# ---- Main ----
 
+def ingest_one(device_name: str, source: str, location: str | None, token: str | None, values: dict):
+    # 只保留有值的 keys（避免把 None 當成一個 metric 值寫入）
+    values = {k: v for k, v in values.items() if v is not None}
+    if not values:
+        return
 
-# === 主程式 ===
+    device_id = upsert_device(device_name, source=source, location=location, token=token)
+
+    metric_id_map = ensure_metrics(list(values.keys()))
+
+    observed_at = datetime.now(timezone.utc)
+    reading_id = insert_reading(device_id, observed_at, raw={"values": values, "source": source})
+
+    insert_reading_values(reading_id, metric_id_map, values)
+    print(f"✅ Ingested {device_name} at {observed_at.isoformat()} with {len(values)} metrics")
+
 if __name__ == "__main__":
-    # 上傳所有 Wio Link 板子
-    for device in DEVICES:
-        data = get_sensor_data(device)
-        upload_to_supabase(data)
+    # Wio devices
+    for d in DEVICES:
+        vals = get_wio_device_values(d)
+        ingest_one(d["name"], d["source"], d.get("location"), d.get("token"), vals)
 
-    # 上傳 ThingSpeak 604 center 資料
-    vlabcenter_data = get_thingspeak_604center_data()
-    if vlabcenter_data:
-        upload_to_supabase(vlabcenter_data)
+    # ThingSpeak devices
+    v = get_thingspeak_604center_values()
+    if v:
+        ingest_one("604_center", "thingspeak", "604", None, v)
 
-    # 上傳 ThingSpeak 604 window 資料
-    vlabwindow_data = get_thingspeak_604window_data()
-    if vlabwindow_data:               # ★ 用正確的變數名判斷
-        upload_to_supabase(vlabwindow_data)
+    v = get_thingspeak_604window_values()
+    if v:
+        ingest_one("wiolink window", "thingspeak", "604", None, v)
 
-    # 上傳 ThingSpeak 604 outdoor 資料
-    vlaboutdoor_data = get_thingspeak_604outdoor_data()
-    if vlaboutdoor_data:
-        upload_to_supabase(vlaboutdoor_data)
+    v = get_thingspeak_604outdoor_values()
+    if v:
+        ingest_one("604_outdoor", "thingspeak", "604", None, v)
