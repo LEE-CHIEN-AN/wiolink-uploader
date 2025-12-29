@@ -46,7 +46,7 @@ def load_data_604light():
 
     response = supabase.table("wiolink") \
         .select("time, name, light_intensity") \
-        .eq("name", "604_door") \
+        .eq("name", "604_wall") \
         .gte("time", start_time.isoformat()) \
         .order("time", desc=False) \
         .execute()
@@ -81,7 +81,7 @@ if df.empty:
     st.stop()
 
 if df_light.empty:
-    st.warning("⚠️ 604_door（light_intensity）近 24 小時沒有資料，Light 卡片將顯示 N/A")
+    st.warning("⚠️ 604_wall（light_intensity）近 24 小時沒有資料，Light 卡片將顯示 N/A")
 
 if df_pm.empty:
     st.warning("⚠️ 604_window（PM）近 24 小時沒有資料，PM 卡片將顯示 N/A")
