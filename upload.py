@@ -114,7 +114,7 @@ def get_thingspeak_604window_data():
             "light_intensity":  None,
             "motion_detected": None,
             "celsius_degree": float(feed["field1"]),
-            "mag_approach":None,
+            "mag_approach":int(feed["field3"]),
             "dust": None,
             "touch": None,
             "pm1_0_atm": int(feed["field4"]),
