@@ -82,23 +82,43 @@ import re
 import pandas as pd
 import numpy as np
 
+import pandas as pd
+
+def _coerce_observed_at_to_taipei(s: pd.Series) -> pd.Series:
+    """
+    Robust timestamptz parsing:
+    - First try ISO8601 strict parsing (handles '2025-12-29T14:26:00+00:00')
+    - Then fallback to fix '+08' / '+0800' forms
+    - Coerce failures to NaT (but should be rare)
+    """
+    # keep original, but ensure it's a string series for cleaning
+    raw = s.astype("string").str.strip()
+
+    # 1) ISO8601 parse (best for Supabase/PostgREST output)
+    dt = pd.to_datetime(raw, errors="coerce", utc=True, format="ISO8601")
+
+    # 2) fallback: normalize odd offsets like +08 / +0800
+    mask = dt.isna()
+    if mask.any():
+        fixed = raw.copy()
+        fixed = fixed.str.replace(" ", "T", regex=False)
+        fixed = fixed.str.replace(r"([+-]\d{2})(\d{2})$", r"\1:\2", regex=True)  # +0800 -> +08:00
+        fixed = fixed.str.replace(r"([+-]\d{2})$", r"\1:00", regex=True)        # +08 -> +08:00
+        dt2 = pd.to_datetime(fixed, errors="coerce", utc=True)
+        dt = dt.fillna(dt2)
+
+    # convert to Taipei time
+    return dt.dt.tz_convert("Asia/Taipei")
+
+
 def _pivot_values(df_long: pd.DataFrame, time_col: str = "observed_at") -> pd.DataFrame:
-    """
-    df_long columns expected:
-      - observed_at
-      - device_name
-      - metric_key
-      - value_numeric / value_bool / value_text
-    Output:
-      - time, name, <metric columns...>
-    """
     if df_long.empty:
         return pd.DataFrame()
 
     df = df_long.copy()
 
     # unify value into one column
-    df["value"] = np.nan
+    df["value"] = None
     if "value_numeric" in df.columns:
         m = df["value_numeric"].notna()
         df.loc[m, "value"] = df.loc[m, "value_numeric"]
@@ -109,42 +129,23 @@ def _pivot_values(df_long: pd.DataFrame, time_col: str = "observed_at") -> pd.Da
         m = df["value_text"].notna()
         df.loc[m, "value"] = df.loc[m, "value_text"].astype(str)
 
-    # rename to dashboard expected columns
     df = df.rename(columns={time_col: "time", "device_name": "name"})
 
-    # ---- Robust datetime parsing ----
-    # normalize timestamps like:
-    #   2025-12-25 02:12:04.558325+08      -> +08:00
-    #   2025-12-25 02:12:04.558325+0800    -> +08:00
-    #   2025-12-25T02:12:04.558325+08      -> +08:00
-    s = df["time"].astype(str)
+    # robust datetime parsing
+    df["time"] = _coerce_observed_at_to_taipei(df["time"])
 
-    # optional: space -> T (helps some parsers; safe for ISO)
-    s = s.str.replace(" ", "T", regex=False)
+    # drop only rows whose time is truly invalid
+    df = df[df["time"].notna()].copy()
 
-    # +0800 or -0530 -> +08:00 / -05:30
-    s = s.str.replace(r"([+-]\d{2})(\d{2})$", r"\1:\2", regex=True)
-
-    # +08 or -05 -> +08:00 / -05:00
-    s = s.str.replace(r"([+-]\d{2})$", r"\1:00", regex=True)
-
-    # parse with coercion so bad rows become NaT instead of raising
-    dt = pd.to_datetime(s, errors="coerce", utc=True)
-
-    # drop unparseable rows
-    bad = dt.isna()
-    if bad.any():
-        st.warning(f"Found {bad.sum()} rows with unparseable observed_at; dropping them.")
-        st.write("Examples of bad observed_at:", df.loc[bad, "time"].head(10).tolist())
-
-
-    df["time"] = dt.dt.tz_convert(TZ_TAIPEI)
-
-    # pivot
     wide = (
-        df.pivot_table(index=["time", "name"], columns="metric_key", values="value", aggfunc="last")
-          .reset_index()
-          .sort_values("time")
+        df.pivot_table(
+            index=["time", "name"],
+            columns="metric_key",
+            values="value",
+            aggfunc="last",
+        )
+        .reset_index()
+        .sort_values("time")
     )
     wide.columns.name = None
     return wide
