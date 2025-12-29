@@ -78,13 +78,17 @@ def fetch_paginated(query_fn, page_size=1000, max_pages=50):
 # =========================================================
 # Helpers: Load readings+values and pivot to "wide"
 # =========================================================
+import re
+import pandas as pd
+import numpy as np
+
 def _pivot_values(df_long: pd.DataFrame, time_col: str = "observed_at") -> pd.DataFrame:
     """
     df_long columns expected:
       - observed_at
       - device_name
       - metric_key
-      - value_numeric / value_bool / value_text (may exist)
+      - value_numeric / value_bool / value_text
     Output:
       - time, name, <metric columns...>
     """
@@ -94,23 +98,49 @@ def _pivot_values(df_long: pd.DataFrame, time_col: str = "observed_at") -> pd.Da
     df = df_long.copy()
 
     # unify value into one column
-    if "value_numeric" in df.columns or "value_bool" in df.columns or "value_text" in df.columns:
-        df["value"] = np.nan
-        if "value_numeric" in df.columns:
-            df.loc[df["value_numeric"].notna(), "value"] = df.loc[df["value_numeric"].notna(), "value_numeric"]
-        if "value_bool" in df.columns:
-            df.loc[df["value_bool"].notna(), "value"] = df.loc[df["value_bool"].notna(), "value_bool"].astype(bool)
-        if "value_text" in df.columns:
-            df.loc[df["value_text"].notna(), "value"] = df.loc[df["value_text"].notna(), "value_text"].astype(str)
-    else:
-        # in case backend already returns unified
-        df["value"] = df.get("value", np.nan)
+    df["value"] = np.nan
+    if "value_numeric" in df.columns:
+        m = df["value_numeric"].notna()
+        df.loc[m, "value"] = df.loc[m, "value_numeric"]
+    if "value_bool" in df.columns:
+        m = df["value_bool"].notna()
+        df.loc[m, "value"] = df.loc[m, "value_bool"].astype("boolean")
+    if "value_text" in df.columns:
+        m = df["value_text"].notna()
+        df.loc[m, "value"] = df.loc[m, "value_text"].astype(str)
 
-    # rename to old field names for downstream reuse
+    # rename to dashboard expected columns
     df = df.rename(columns={time_col: "time", "device_name": "name"})
 
-    df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert(TZ_TAIPEI)
+    # ---- Robust datetime parsing ----
+    # normalize timestamps like:
+    #   2025-12-25 02:12:04.558325+08      -> +08:00
+    #   2025-12-25 02:12:04.558325+0800    -> +08:00
+    #   2025-12-25T02:12:04.558325+08      -> +08:00
+    s = df["time"].astype(str)
 
+    # optional: space -> T (helps some parsers; safe for ISO)
+    s = s.str.replace(" ", "T", regex=False)
+
+    # +0800 or -0530 -> +08:00 / -05:30
+    s = s.str.replace(r"([+-]\d{2})(\d{2})$", r"\1:\2", regex=True)
+
+    # +08 or -05 -> +08:00 / -05:00
+    s = s.str.replace(r"([+-]\d{2})$", r"\1:00", regex=True)
+
+    # parse with coercion so bad rows become NaT instead of raising
+    dt = pd.to_datetime(s, errors="coerce", utc=True)
+
+    # drop unparseable rows
+    bad = dt.isna()
+    if bad.any():
+        st.warning(f"Found {bad.sum()} rows with unparseable observed_at; dropping them.")
+        st.write("Examples of bad observed_at:", df.loc[bad, "time"].head(10).tolist())
+
+
+    df["time"] = dt.dt.tz_convert(TZ_TAIPEI)
+
+    # pivot
     wide = (
         df.pivot_table(index=["time", "name"], columns="metric_key", values="value", aggfunc="last")
           .reset_index()
@@ -118,6 +148,7 @@ def _pivot_values(df_long: pd.DataFrame, time_col: str = "observed_at") -> pd.Da
     )
     wide.columns.name = None
     return wide
+
 
 @st.cache_data(ttl=60)
 def load_device_metrics_wide(
