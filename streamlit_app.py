@@ -817,7 +817,6 @@ plt.tight_layout()
 
 st.title("🌡️ 604 教室 PMV 熱力圖 ")
 st.markdown(f"""預測平均表決 (Predicted Mean Vote，PMV)，是由丹麥學者P.O. Fanger教授於1972年所發表人體熱平衡模型，該模型用來表示人體對於環境中冷、熱的感受。""")
-st.image("https://www.simscale.com/wp-content/uploads/2019/09/Artboard-1-1024x320.png", use_container_width=True)	
 st.pyplot(fig)
 
 
@@ -857,7 +856,6 @@ plt.tight_layout()
 st.title("🧊 604 教室 PPD 熱力圖 ")
 st.markdown(f"""預測不滿意百分率(Predicted Percentage of Dissa-tisfied, PPD)，表示在該PMV舒適指標中，空間內有多少百分比的人感到不舒適。""")
 st.markdown(f"""為了確保符合已知標準（ASHRAE 55 和 ISO 7730）的熱舒適度，空間內所有佔用區域的 PPD 值應保持在 20% 以下。""")
-st.image("https://www.simscale.com/wp-content/uploads/2019/09/pmv_ppd-1.png", use_container_width=True)	
 st.pyplot(fig)
 
 
@@ -899,8 +897,27 @@ def load_co2_data(days=10):
 
 # ---------- 畫面與圖表 ----------
 st.title("🌿 604 長期趨勢圖")
-st.image("https://urbanrenewal.wealth.com.tw/uploads/editor/1625104721.jpg", use_container_width=True)	
 df = load_co2_data(days=10)         # ← 這裡就是 10 天
+
+st.write("DEBUG df type:", type(df))
+if not isinstance(df, pd.DataFrame):
+    st.error("df 被覆蓋成非 DataFrame，請檢查你前面是否又用 df = ... 指到別的資料。")
+    st.stop()
+
+st.write("DEBUG df shape:", df.shape)
+st.write("DEBUG df columns:", list(df.columns))
+
+if df.empty:
+    st.warning("最近 10 天沒有 CO2/VOC 資料，略過趨勢圖。")
+    st.stop()
+
+missing = [c for c in ["time", "co2eq", "total_voc"] if c not in df.columns]
+if missing:
+    st.error(f"df 缺少欄位：{missing}。請檢查 Supabase select 欄位名稱或 schema 是否已改。")
+    st.write(df.head())
+    st.stop()
+
+st.write("DEBUG time dtype:", df["time"].dtype, " co2eq dtype:", df["co2eq"].dtype)
 
 fig = px.line(
     data_frame=df,
