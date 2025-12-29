@@ -862,7 +862,7 @@ st.pyplot(fig)
 # 604 溫溼度熱力圖 END========================================
 
 
-'''
+
 #==========VOC and CO2 長期趨勢圖======================================================
 # ---------- 資料抓取函式 ----------
 @st.cache_data(ttl=60)  # 每1分鐘更新一次
@@ -898,26 +898,6 @@ def load_co2_data(days=10):
 # ---------- 畫面與圖表 ----------
 st.title("🌿 604 長期趨勢圖")
 df = load_co2_data(days=10)         # ← 這裡就是 10 天
-
-st.write("DEBUG df type:", type(df))
-if not isinstance(df, pd.DataFrame):
-    st.error("df 被覆蓋成非 DataFrame，請檢查你前面是否又用 df = ... 指到別的資料。")
-    st.stop()
-
-st.write("DEBUG df shape:", df.shape)
-st.write("DEBUG df columns:", list(df.columns))
-
-if df.empty:
-    st.warning("最近 10 天沒有 CO2/VOC 資料，略過趨勢圖。")
-    st.stop()
-
-missing = [c for c in ["time", "co2eq", "total_voc"] if c not in df.columns]
-if missing:
-    st.error(f"df 缺少欄位：{missing}。請檢查 Supabase select 欄位名稱或 schema 是否已改。")
-    st.write(df.head())
-    st.stop()
-
-st.write("DEBUG time dtype:", df["time"].dtype, " co2eq dtype:", df["co2eq"].dtype)
 
 fig = px.line(
     data_frame=df,
@@ -958,131 +938,3 @@ fig.add_hline(
 
 st.plotly_chart(fig, use_container_width=True)
 #------------------------------------------------------
-
-# -------- PM 資料抓取與圖表（穩定版） ----------
-# ========= Supabase 分頁抓取 helper =========
-def fetch_paginated(query_fn, page_size=1000, max_pages=50):
-    """
-    query_fn(): 回傳一個已串好條件（select/eq/gte/lte/order）的 query builder
-    會自動用 .range 分頁抓取，直到資料抓完或超過 max_pages。
-    """
-    frames = []
-    offset = 0
-    for _ in range(max_pages):
-        q = query_fn().range(offset, offset + page_size - 1)
-        resp = q.execute()
-        rows = resp.data or []
-        if not rows:
-            break
-        frames.append(pd.DataFrame(rows))
-        if len(rows) < page_size:
-            break
-        offset += page_size
-
-    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
-
-# ---------- PM : 最近 10 天（含分頁抓取） ----------
-@st.cache_data(ttl=60)
-def load_pm_data(days=10):
-    from datetime import datetime, timedelta, timezone
-    now_utc = datetime.now(timezone.utc)
-    start_utc = now_utc - timedelta(days=days)
-    start_iso = start_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-    end_iso   = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    cols = ["time", "name", "pm1_0_atm", "pm2_5_atm", "pm10_atm"]
-
-    def build_query():
-        # 這裡把條件固定好，每頁只加上 .range
-        return (
-            supabase.table("wiolink")
-            .select(",".join(cols))
-            .eq("name", "604_window")   # ← 裝置名稱
-            .gte("time", start_iso)
-            .lte("time", end_iso)
-            .order("time", desc=False)
-        )
-
-    df = fetch_paginated(build_query, page_size=1000, max_pages=50)
-
-    if df.empty:
-        # 回傳帶欄名的空DF，避免後續圖表找不到欄位
-        return pd.DataFrame(columns=cols)
-
-    # 轉型與清理
-    df["time"] = pd.to_datetime(df["time"], utc=True).dt.tz_convert("Asia/Taipei")
-    for c in ["pm1_0_atm", "pm2_5_atm", "pm10_atm"]:
-        df[c] = pd.to_numeric(df[c], errors="coerce")
-
-    # 僅刪掉「三個 PM 都是 NaN」的列，保留任一有值的時間點
-    df = df.dropna(subset=["pm1_0_atm", "pm2_5_atm", "pm10_atm"], how="all")
-
-    # 如果同一時間戳有重複，保留最後一筆
-    df = df.sort_values("time").drop_duplicates(subset=["time", "name"], keep="last")
-
-    return df
-
-
-df_pm = load_pm_data(days=10)
-
-if df_pm.empty:
-    st.info("最近 10 天沒有可用的 PM 資料（wiolink_window）。")
-else:
-    # 各自圖各自 dropna（避免某一項斷線牽連其它圖）
-    st.plotly_chart(
-        px.line(df_pm.dropna(subset=["pm1_0_atm"]), x="time", y="pm1_0_atm",
-                title="604 教室 PM1.0 濃度變化趨勢",
-                labels={"pm1_0_atm":"PM1.0 (μg/m³)", "time":"時間"},
-                height=500),
-        use_container_width=True
-    )
-    st.plotly_chart(
-        px.line(df_pm.dropna(subset=["pm2_5_atm"]), x="time", y="pm2_5_atm",
-                title="604 教室 PM2.5 濃度變化趨勢",
-                labels={"pm2_5_atm":"PM2.5 (μg/m³)", "time":"時間"},
-                height=500),
-        use_container_width=True
-    )
-    st.plotly_chart(
-        px.line(df_pm.dropna(subset=["pm10_atm"]), x="time", y="pm10_atm",
-                title="604 教室 PM10 濃度變化趨勢",
-                labels={"pm10_atm":"PM10 (μg/m³)", "time":"時間"},
-                height=500),
-        use_container_width=True
-    )
-
-#=========================================================================
-'''
-#==戶外感測器模組=======================================================
-
-#-------------------------------------------
-'''
-st.title("🌱 6樓 戶外感測看板")
-st.set_page_config(layout="wide")
-
-urls = [
-    ("室外溫度 (°C)", "https://thingspeak.com/channels/3031639/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line"),
-    ("室外濕度 (%)",   "https://thingspeak.com/channels/3031639/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"),
-    ("PM1.0",         "https://thingspeak.com/channels/3031639/charts/3?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"),
-    ("PM2.5",         "https://thingspeak.com/channels/3031639/charts/4?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"),
-    ("PM10",          "https://thingspeak.com/channels/3031639/charts/5?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"),
-]
-
-for title, url in urls:
-    st.markdown(f"#### {title}")
-    components.html(
-        f"""
-        <div style="width:100%;max-width:1400px;margin:0;">
-          <iframe
-            src="{url}"
-            style="width:100%; height:260px; border:1px solid #cccccc; display:block;"
-            frameborder="0" scrolling="no">
-          </iframe>
-        </div>
-        """,
-        height=280, width = 470   # 一定要 >= iframe 的高度，否則會被裁切
-    )
-    st.markdown("")  # 小間距
-
-#==戶外感測器模組=======================================================
-'''
