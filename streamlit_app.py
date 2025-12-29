@@ -37,7 +37,7 @@ def load_data_604():
   
     df = pd.DataFrame(response.data)
     df["time"] = pd.to_datetime(df["time"])
-    return df.dropna()
+    return df
     
 @st.cache_data(ttl=60)  # 每1分鐘更新
 def load_data_604light():
@@ -53,7 +53,7 @@ def load_data_604light():
 
     df = pd.DataFrame(response.data)
     df["time"] = pd.to_datetime(df["time"])
-    return df.dropna()
+    return df
 
 @st.cache_data(ttl=60)  # 每1分鐘更新
 def load_data_604PM():
@@ -69,7 +69,7 @@ def load_data_604PM():
 
     df = pd.DataFrame(response.data)
     df["time"] = pd.to_datetime(df["time"])
-    return df.dropna()
+    return df
 
 df = load_data_604()
 df_light  = load_data_604light()
