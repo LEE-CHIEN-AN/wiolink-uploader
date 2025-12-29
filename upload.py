@@ -294,6 +294,6 @@ if __name__ == "__main__":
     if v:
         ingest_one("604_window", "thingspeak", "604", None, v)
 
-    v = get_604_outdoor_values()
-    if v:
-        ingest_one("604_outdoor", "thingspeak", "604", None, v)
+    #v = get_604_outdoor_values()
+    #if v:
+        #ingest_one("604_outdoor", "thingspeak", "604", None, v)
