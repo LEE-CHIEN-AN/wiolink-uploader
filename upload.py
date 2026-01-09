@@ -47,7 +47,6 @@ def get_sensor_data(device):
         "name": device["name"],
         "humidity": None,
         "light_intensity": None,
-        "motion_detected": None,  # 動作偵測感測器（目前未使用）
         "dust": None,
         "celsius_degree": None,
         "mag_approach": None,  # 磁簧開關狀態（門是否靠近磁鐵）
@@ -86,7 +85,6 @@ def get_thingspeak_604center_data():
             "name": "604_center",
             "humidity": int(feed["field2"]),
             "light_intensity":  None,
-            "motion_detected": None,
             "celsius_degree": float(feed["field1"]),
             "mag_approach": None,
             "dust": None,
@@ -112,7 +110,6 @@ def get_thingspeak_604window_data():
             "name": "604_window",
             "humidity": int(feed["field2"]),
             "light_intensity":  None,
-            "motion_detected": None,
             "celsius_degree": float(feed["field1"]),
             "mag_approach":int(feed["field3"]),
             "dust": None,
