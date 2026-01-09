@@ -87,8 +87,7 @@ def get_thingspeak_604center_data():
             "light_intensity":  None,
             "celsius_degree": float(feed["field1"]),
             "mag_approach": None,
-            "dust": None,
-            "touch": None
+            "dust": None
         }
 
     except Exception as e:
@@ -113,7 +112,6 @@ def get_thingspeak_604window_data():
             "celsius_degree": float(feed["field1"]),
             "mag_approach":int(feed["field3"]),
             "dust": None,
-            "touch": None,
             "pm1_0_atm": int(feed["field4"]),
             "pm2_5_atm": int(feed["field5"]),
             "pm10_atm": int(feed["field6"])
